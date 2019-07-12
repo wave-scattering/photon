@@ -47,7 +47,6 @@ ADD_EXECUTABLE(${PROJECTNAME} "c1axsrefl3d.f"
         "znsrefind.f")
 
 
-
 target_link_libraries(${PROJECTNAME} #${BLAS_LIBRARIES}
         #${LAPACK_LIBRARIES} ${HDF5_Fortran_LIBRARIES}
         )
