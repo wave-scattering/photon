@@ -4,5 +4,5 @@ filename = "rtaAgcyl.dat"
 
 data = np.loadtxt(filename)
 print(data)
-plt.scatter(data[:,0],data[:,1])
+plt.plot(data[:,0],data[:,1])
 plt.show()

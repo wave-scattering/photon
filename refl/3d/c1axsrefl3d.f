@@ -1259,9 +1259,9 @@ C                   THUS ZVAL  here is related to OMEGA in BSC by
 C                             ZVAL=OMEGA_{BSC}*sqrt(2.d0)
 c                     lambda=2.d0*pi*rsnm/(zval*rmuf)
 c      ZINF=1.4d0
-      ZINF=2.d0*pi*rsnm/(1300.d0*rmuf)  !1.469923168
+      ZINF=2.d0*pi*rsnm/(1000.d0*rmuf)  !1.469923168
 c      ZSUP=3.5d0
-      ZSUP=2.d0*pi*rsnm/(280.d0*rmuf)   !3.322821292
+      ZSUP=2.d0*pi*rsnm/(100.d0*rmuf)   !3.322821292
 c      ZINF=0.8d0*sqrt(2.d0)
 c      ZSUP=4.d0*sqrt(2.d0)
 c
@@ -1270,7 +1270,7 @@ c      1910                 Gold
 c      1910                 Copper
 c      2030                 Aluminium
 c
-      NSTEP=200
+      NSTEP=400
 C     NSTEP          : NUMBER OF EQUALLY SPACED POINTS BETWEEN ZINF, ZSUP   * 
       IF(NSTEP.LE.1)        STOP 'ILLEGAL INPUT VALUE OF  NSTEP ' 
 C >>> elementary step on the scanning interval:
@@ -1804,7 +1804,7 @@ C      STOP
       WRITE(8,*)'ABSORPTION=',ABSOR ,'IS NEGATIVE!'
 c      pause
       END IF
-      WRITE(8,101)  ZVAL,TRANS,REFLE,ABSOR
+      WRITE(8,101)  ZVAL,TRANS,REFLE,ABSOR  
       WRITE(6,101)  ZVAL,TRANS,REFLE,ABSOR  
       RETURN  
 C  
