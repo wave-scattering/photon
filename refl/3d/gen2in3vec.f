@@ -49,7 +49,7 @@ C
 C  
 C ..  EXTERNAL FUNCTIONS ..  
 C  
-      REAL*8    BLM  
+      REAL*8 BLM
 C
 C ..  DATA STATEMENTS ..  
 C  

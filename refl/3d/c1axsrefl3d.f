@@ -19,7 +19,7 @@ C     RMAX ... the number of different diffraction orders which are
 C              used to couple scattering planes together to form a
 C              stack; controls the precision of interplane scattering
 C     Q0   ... the Ewald parameter; controls the precision of
-C              the lattice summation
+C              the lattice summation - determined in dlmsf2in3.f
 C
 C     Whereas, in the wavelength range considered (300nm-infinity) and
 C     lattice spacing from hundreds of nanometers up, there is no need
@@ -121,10 +121,10 @@ C ::: number of the output unit
 * In the latter case, the total reflectance, transmittance, absorptance
 * calculated
       PARAMETER(YNSP='n')
-* If ordered system than ORDERED=.TRUE. otherwise ORDERED=.FALSE.
+* If ordered system then ORDERED=.TRUE. otherwise ORDERED=.FALSE.
       PARAMETER(ORDERED=.TRUE.)
 *      
-      PARAMETER (ynphase=.false.)      ! true only if reflection phase
+      PARAMETER (ynphase=.false.)      ! true only if reflection phase needed
 *       
 C ::: relative error allowed for the T matrix. If the convergence
 *     within TOL is not reached, program issues warning
@@ -179,7 +179,7 @@ C ::: Stacking sequence label - used only if ORDERED=.TRUE. !!!
 *    29          55
 *    30          ??
 *
-      PARAMETER(IGD=19)
+      PARAMETER(IGD=37)
 * dimension of scattering matrices
       PARAMETER(IGKD=2*IGD)
 * cut off on the number of different scattering components within an unit slice 
@@ -207,9 +207,8 @@ c          Nidat.dat              NFIN=68       ! from Palik
 c          Sidat.dat              NFIN=291
 c          sieps.dat              NFIN=223
 *
-      PARAMETER (NFIN=223)  !in the case of NDM>1, select the maximum
+      PARAMETER (NFIN=73)  !in the case of NDM>1, select the maximum
                            !value of the corresponding NFIN numbers
-*
 *
 c If ynsz=.true., performs size correction for ZEPS1. Otherwise
 c ynsz=false.
@@ -258,7 +257,7 @@ c Quantities for the use of the material data
 c OMF is plasma/omega, CEPS1 contains the complex (sphere) EPS
 c
 *  
-C   C ..  SCALAR VARIABLES ..   C  
+C ..  SCALAR VARIABLES ..   C
       INTEGER      LMAX,I,IGKMAX,IGK1,IGK2,IGMAX,KTYPE,KSCAN,NCOMP,IG1  
       INTEGER      IG0,NUNIT,ICOMP,KEMB,IU,IP,IPL,IPLP,ILAYER,ILCSN
       INTEGER      IEPS,ISTEP,NSTEP,NBAS
@@ -489,9 +488,12 @@ C                2: SCANNING OVER WAVELENGTHS
 C     KEMB=0        EMBEDDING MEDIUM ON THE LEFT AND RIGHT IDENTICAL
 C     KEMB=1        DIFFERENT EMBEDDING MEDIA ON THE LEFT AND RIGHT 
 
-      DATA LMAX/4/
+      DATA LMAX/7/
 C     LMAX        : THE ACTUAL CUTOFF IN SPHERICAL WAVES EXPANSIONS  
       DATA NBAS/1/
+C     NBAS        : THE ACTUAL NUMBER OF ATOMS PER UNIT CELL
+C cutoff on the number of scatterers per primitive cell set currently
+C  to NCMB=2 in pccslab* routines
 C=======================================================================  
 * Setting up the direct and reciprocal lattice  
       DATA ALPHA/1.d0/
@@ -518,8 +520,8 @@ C=======================================================================
 *
 * Setting scattering angles:
 *
-c      READ(10,204) AQ(1),AQ(2),POLAR,FEIN
 
+c      READ(10,204) AQ(1),AQ(2),POLAR,FEIN
  
       IF (KTYPE.GE.2) THEN  
       
@@ -544,9 +546,8 @@ C                                                                 the slab)
 
       WRITE(6,208) THETA,FI,POLAR                            
             
-                             ENDIF 
+                             ENDIF
 
-           
       DATA FEIN/0.d0/
 C     FEIN        : ANGLE  (IN DEG) SPECIFYING  THE DIRECTION  OF  THE  
 C                   POLARIZATION  VECTOR  FOR  NORMAL  INCIDENCE.  NOT  
@@ -563,7 +564,7 @@ C                   EFFECTIVE OTHERWISE
  
 *
 C  If $A=2$ is the side length of a conventional cubic unit cell
-C  (as in mine 3d calculations), the maximal sphere radius is $1.d0/sqrt(2.d0)$
+C  (as in my 3d calculations), the maximal sphere radius is $1.d0/sqrt(2.d0)$
 C  If conversion from BSC (band structure calc.) to R&T wanted
 C      rmuf= X d0 *sqrt(2.d0)
 C where X is the sphere radius in BSC
@@ -1264,7 +1265,7 @@ c      1910                 Gold
 c      1910                 Copper
 c      2030                 Aluminium
 c
-      NSTEP=400
+      NSTEP=500
 C     NSTEP          : NUMBER OF EQUALLY SPACED POINTS BETWEEN ZINF, ZSUP   * 
       IF(NSTEP.LE.1)        STOP 'ILLEGAL INPUT VALUE OF  NSTEP ' 
 C >>> elementary step on the scanning interval:
@@ -1288,8 +1289,8 @@ C************************************************************
 *********************
  52   ZVAL0=ZINF-ZSTEP
 
-      ZVAL0=3.73d0
-      ZSTEP=0.02d0/dble(nstep)
+      ZVAL0=3.7d0
+      ZSTEP=.1d0/dble(nstep)
 
 
       DO 300 ISTEP=1,NSTEP   ! SCANNING OVER FREQUENCIES/WAVELENGTHS
@@ -1397,9 +1398,13 @@ C
       EFIRST=EPS1(1)  
       RAP=S(1,1)*KAPPA0/2.D0/PI          !=rsnm/LAMBDA
 *
-      CALL PCCSLABC(YNC,LMAX,IGMAX,NBAS,RAP,EPS1(1),EPSSPH(1,1),MU1(1)  
-     &        ,MUSPH(1,1),KAPPA,AK,DL(1,1,1),DR(1,1,1),G,A0,EMACH,  
-     &             QIL,QIIL,QIIIL,QIVL)
+      CALL PCSLAB(YNC,LMAX,IGMAX,RAP,EPS1(1),EPSSPH(1,1),MU1(1)
+     &     ,MUSPH(1,1),KAPPA,AK,DL(1,1,1),DR(1,1,1),G,ELM,A0,EMACH,
+     &     QIL,QIIL,QIIIL,QIVL)
+
+cp      CALL PCCSLAB(YNC,LMAX,IGMAX,NBAS,RAP,EPS1(1),EPSSPH(1,1)
+cp     &  ,MU1(1),MUSPH(1,1),KAPPA,AK,DL(1,1,1),DR(1,1,1)
+cp     &     ,G,A0,EMACH,QIL,QIIL,QIIIL,QIVL)
 *
 *--------/---------/---------/---------/---------/---------/---------/--
       IF(NPLAN(1).GE.2) THEN  
@@ -1635,7 +1640,7 @@ C ..  PARAMETER STATEMENTS ..
 C 
       INTEGER   IGD,IGKD
       logical ynphase 
-      PARAMETER (IGD=19,IGKD=2*IGD)  
+      PARAMETER (IGD=37,IGKD=2*IGD)
       PARAMETER (ynphase=.false.)      ! true only if reflection phase
 *                                       is required      
 C  
@@ -1848,7 +1853,7 @@ C
 C  .. PARAMETER STATEMENTS ..  
 C  
       INTEGER IGD,IGKD  
-      PARAMETER (IGD=19,IGKD=2*IGD)  
+      PARAMETER (IGD=37,IGKD=2*IGD)
 C  
 C  .. SCALAR ARGUMENTS ..  
 C  
@@ -5327,7 +5332,7 @@ C
 C ..  PARAMETER STATEMENTS  ..  
 C  
       INTEGER   IGD,IGKD  
-      PARAMETER (IGD=19,IGKD=2*IGD)  
+      PARAMETER (IGD=37,IGKD=2*IGD)
 C  
 C ..  SCALAR ARGUMENTS  ..  
 C  
@@ -5444,7 +5449,7 @@ C
       character*1 ync
       INTEGER   LMAXD,LMAX1D,LMODD,LMEVEN,LMTD,LM1SQD,IGD,IGKD,NELMD  
       PARAMETER (LMAXD=8,LMAX1D=LMAXD+1,LMODD=(LMAXD*LMAX1D)/2)  
-      PARAMETER (LM1SQD=LMAX1D*LMAX1D,IGD=19,IGKD=2*IGD,NELMD=13593)  
+      PARAMETER (LM1SQD=LMAX1D*LMAX1D,IGD=37,IGKD=2*IGD,NELMD=13593)
       PARAMETER (LMEVEN=(LMAX1D*(LMAX1D+1))/2,LMTD=LM1SQD-1)  
 C  
 C ..  SCALAR ARGUMENTS ..  
@@ -5634,7 +5639,7 @@ C
 C ..  PARAMETER STATEMENTS ..  
 C  
       INTEGER   IGD,IGKD,IGK2D  
-      PARAMETER(IGD=19,IGKD=2*IGD,IGK2D=2*IGKD)  
+      PARAMETER(IGD=37,IGKD=2*IGD,IGK2D=2*IGKD)
 C  
 C ..  SCALAR ARGUMENTS  ..  
 C  
@@ -5794,7 +5799,7 @@ C
 C ..  PARAMETER STATEMENTS  ..  
 C  
       INTEGER IGD  
-      PARAMETER (IGD=19)  
+      PARAMETER (IGD=37)
 C  
 C ..  SCALAR ARGUMENTS  ..   
 C  

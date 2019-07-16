@@ -48,7 +48,7 @@ C
       PARAMETER (LMAXD=8,LMAX1D=LMAXD+1,LMTD=LMAX1D*LMAX1D-1)
       PARAMETER (LM1SQD=LMAX1D*LMAX1D,LMVT=2*LMTD)
       PARAMETER (NDLMM=(2*LMAXD+1)*(2*LMAXD+1))
-      PARAMETER (NYLRD=LMAX1D**2,IGD=19,IGKD=2*IGD)
+      PARAMETER (NYLRD=LMAX1D**2,IGD=37,IGKD=2*IGD)
 *::: cutoff on the number of scatterers per primitive cell
       PARAMETER (NCMB=2)
       PARAMETER (NFM=NCMB*NCMB-NCMB+1)
@@ -144,11 +144,11 @@ cc      OPEN(62,FILE='tmtmmdiag.dat')
 *
       DO IB=1,NBAS  ! Loop over different scattering centers
 *
-cx      if (ib.eq.1) 
-cx     &  CALL TMTRXN(YNC,LMAX1D,RAP,EPSSPH,EPSMED,MUMED,MUSPH,TE,TH) 
+cx      if (ib.eq.1)
+cx     &  CALL TMTRXN(YNC,LMAX1D,RAP,EPSSPH,EPSMED,MUMED,MUSPH,TE,TH)
 cx      if (ib.gt.1)
 *
-       CALL TMTAXSP(LMAX,CRAP,EPSSPH,EPSMED,TMT(1,1,1,ib)) 
+cm       CALL TMTAXSP(LMAX,CRAP,EPSSPH,EPSMED,TMT(1,1,1,ib))
 *
 C--------/---------/---------/---------/---------/---------/---------/--
 C

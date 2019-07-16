@@ -89,7 +89,6 @@ C--------/---------/---------/---------/---------/---------/---------/--
       PARAMETER (TOL=1.d-8)
 * Should convergence test be performed???
       PARAMETER (yntest='y')
-
 c 
 c     LOCAL SCALARS
 c 
