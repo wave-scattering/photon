@@ -179,7 +179,7 @@ C ::: Stacking sequence label - used only if ORDERED=.TRUE. !!!
 *    29          55
 *    30          ??
 *
-      PARAMETER(IGD=37)
+      PARAMETER(IGD=19)
 * dimension of scattering matrices
       PARAMETER(IGKD=2*IGD)
 * cut off on the number of different scattering components within an unit slice 
@@ -504,7 +504,7 @@ C                   1.D0
 C     ALPHAP      : LENGTH OF THE SECOND PRIMITIVE VECTOR OF THE
 C                   TWO-DIMENSIONAL LATTICE  
  
-      DATA RMAX/22.d0/
+      DATA RMAX/16.d0/
 C     RMAX        : UPPER LIMIT FOR THE LENGTH OF  RECIPROCAL  LATTICE  
 C                   VECTORS (IN UNITS OF 1/ALPHA) WHICH  MUST BE TAKEN  
 C                   INTO ACCOUNT. A larger value of RMAX has to be
@@ -528,17 +528,11 @@ c      READ(10,204) AQ(1),AQ(2),POLAR,FEIN
                                  
       ELSE IF (KTYPE.GE.1) THEN 
 
-      DATA THETA/0.d0/
+      DATA THETA/6.d0/
       DATA FI/0.d0/
 C             "THETA" AND "FI" ARE THE POLAR ANGLES (IN DEG) OF INCIDENCE 
 C             OF AN INCIDENT EM WAVE
-C  Because AK(1), AK(2) are prop to DBLE(KAPIN)*SIN(THETA), THETA cannot be zero
 
-cc      if (theta.eq.0) then
-cc      write (6,*) 'THETA cannot be zero'
-cc      stop
-cc      end if
-      
       THETA=THETA*PI/180.D0  
       FI=FI*PI/180.D0 
       
@@ -1292,8 +1286,12 @@ C************************************************************
       end if                      ! material constant reading      
 
 *********************
- 52   ZVAL0=ZINF-ZSTEP  
- 
+ 52   ZVAL0=ZINF-ZSTEP
+
+      ZVAL0=3.73d0
+      ZSTEP=0.02d0/dble(nstep)
+
+
       DO 300 ISTEP=1,NSTEP   ! SCANNING OVER FREQUENCIES/WAVELENGTHS
 
       ZVAL=ZVAL0+ISTEP*ZSTEP  
@@ -1637,8 +1635,8 @@ C ..  PARAMETER STATEMENTS ..
 C 
       INTEGER   IGD,IGKD
       logical ynphase 
-      PARAMETER (IGD=37,IGKD=2*IGD)  
-      PARAMETER (ynphase=.true.)      ! true only if reflection phase
+      PARAMETER (IGD=19,IGKD=2*IGD)  
+      PARAMETER (ynphase=.false.)      ! true only if reflection phase
 *                                       is required      
 C  
 C ..  SCALAR ARGUMENTS  ..  
@@ -1850,7 +1848,7 @@ C
 C  .. PARAMETER STATEMENTS ..  
 C  
       INTEGER IGD,IGKD  
-      PARAMETER (IGD=37,IGKD=2*IGD)  
+      PARAMETER (IGD=19,IGKD=2*IGD)  
 C  
 C  .. SCALAR ARGUMENTS ..  
 C  
@@ -5329,7 +5327,7 @@ C
 C ..  PARAMETER STATEMENTS  ..  
 C  
       INTEGER   IGD,IGKD  
-      PARAMETER (IGD=37,IGKD=2*IGD)  
+      PARAMETER (IGD=19,IGKD=2*IGD)  
 C  
 C ..  SCALAR ARGUMENTS  ..  
 C  
@@ -5446,7 +5444,7 @@ C
       character*1 ync
       INTEGER   LMAXD,LMAX1D,LMODD,LMEVEN,LMTD,LM1SQD,IGD,IGKD,NELMD  
       PARAMETER (LMAXD=8,LMAX1D=LMAXD+1,LMODD=(LMAXD*LMAX1D)/2)  
-      PARAMETER (LM1SQD=LMAX1D*LMAX1D,IGD=37,IGKD=2*IGD,NELMD=13593)  
+      PARAMETER (LM1SQD=LMAX1D*LMAX1D,IGD=19,IGKD=2*IGD,NELMD=13593)  
       PARAMETER (LMEVEN=(LMAX1D*(LMAX1D+1))/2,LMTD=LM1SQD-1)  
 C  
 C ..  SCALAR ARGUMENTS ..  
@@ -5636,7 +5634,7 @@ C
 C ..  PARAMETER STATEMENTS ..  
 C  
       INTEGER   IGD,IGKD,IGK2D  
-      PARAMETER(IGD=37,IGKD=2*IGD,IGK2D=2*IGKD)  
+      PARAMETER(IGD=19,IGKD=2*IGD,IGK2D=2*IGKD)  
 C  
 C ..  SCALAR ARGUMENTS  ..  
 C  
@@ -5796,7 +5794,7 @@ C
 C ..  PARAMETER STATEMENTS  ..  
 C  
       INTEGER IGD  
-      PARAMETER (IGD=37)  
+      PARAMETER (IGD=19)  
 C  
 C ..  SCALAR ARGUMENTS  ..   
 C  
