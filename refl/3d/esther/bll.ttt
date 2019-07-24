@@ -1,0 +1,343 @@
+
+FTNCHEK Version 3.2 November 2002
+
+File caxsrefl3d.f:
+    300       INTEGER      IG0,NUNIT,ICOMP,ICOMPL,KEMB,IU,IP,IPL,IPLP,ILAYER,ILCSN
+                                                                                ^
+Possibly misleading appearance near line 300 col 73 file caxsrefl3d.f: 
+ characters past 72 columns
+   1039       if ((ktype.eq.3).and.(ynrealeps)) write(nout,*)'#Only the REAL part
+                                                                                ^
+Possibly misleading appearance near line 1039 col 73 file caxsrefl3d.f: 
+ characters past 72 columns
+
+Warning in module CAXSREFL3D in file caxsrefl3d.f: Variables declared but
+ never referenced:
+    DUMMY declared at line 314 file caxsrefl3d.f
+    ILC declared at line 300 file caxsrefl3d.f
+
+Warning in module CAXSREFL3D in file caxsrefl3d.f: Variables used before set
+    AXI used at line 1053 file caxsrefl3d.f; never set
+
+Warning in module CAXSREFL3D in file caxsrefl3d.f: Labels defined but not
+ used:
+    <204> defined at line 2075 file caxsrefl3d.f
+   2232       DOWN =DOWN +EINCID(IGK1)*DCONJG(EINCID(IGK1))*GKZIN
+                   ^
+Warning near line 2232 col 12 file caxsrefl3d.f: dcpx expr 
+ DOWN+EINCID(IGK1)*DCONJG .. truncated to real*8 DOWN
+   2233       TRANS=TRANS+ETRANS(IGK1)*DCONJG(ETRANS(IGK1))*GKZOUT  
+                   ^
+Warning near line 2233 col 12 file caxsrefl3d.f: dcpx expr 
+ TRANS+ETRANS(IGK1)*DCONJ .. truncated to real*8 TRANS
+   2234       REFLE=REFLE+EREFLE(IGK1)*DCONJG(EREFLE(IGK1))*GKZIN 
+                   ^
+Warning near line 2234 col 12 file caxsrefl3d.f: dcpx expr 
+ REFLE+EREFLE(IGK1)*DCONJ .. truncated to real*8 REFLE
+   2293       XX=EREFLE(IGK1)*DCONJG(EREFLE(IGK1))*GKZIN 
+                ^
+Warning near line 2293 col 9 file caxsrefl3d.f: dcpx expr 
+ EREFLE(IGK1)*DCONJG(EREF .. truncated to real*8 XX
+   2302       DOWN =DOWN +EINCID(IGK1)*DCONJG(EINCID(IGK1))*GKZIN
+                   ^
+Warning near line 2302 col 12 file caxsrefl3d.f: dcpx expr 
+ DOWN+EINCID(IGK1)*DCONJG .. truncated to real*8 DOWN
+   2303       TRANS=TRANS+ETRANS(IGK1)*DCONJG(ETRANS(IGK1))*GKZOUT  
+                   ^
+Warning near line 2303 col 12 file caxsrefl3d.f: dcpx expr 
+ TRANS+ETRANS(IGK1)*DCONJ .. truncated to real*8 TRANS
+   2304       REFLE=REFLE+EREFLE(IGK1)*DCONJG(EREFLE(IGK1))*GKZIN 
+                   ^
+Warning near line 2304 col 12 file caxsrefl3d.f: dcpx expr 
+ REFLE+EREFLE(IGK1)*DCONJ .. truncated to real*8 REFLE
+
+Warning in module SCAT in file caxsrefl3d.f: Variables declared but never
+ referenced:
+    LEIN declared at line 2169 file caxsrefl3d.f
+   3036       NA0=SP/AMOD2 + 1  
+                 ^
+Warning near line 3036 col 10 file caxsrefl3d.f: real*8 expr SP/AMOD2+1 
+ truncated to intg NA0
+
+Warning in module TMTRXN in file caxsrefl3d.f: Variables declared but never
+ referenced:
+    CMEDMU declared at line 3564 file caxsrefl3d.f (dummy argument)
+    CSPHMU declared at line 3564 file caxsrefl3d.f (dummy argument)
+   4511          K = SCALE(I)  
+                   ^
+Warning near line 4511 col 12 file caxsrefl3d.f: real*8 SCALE truncated to 
+ intg K
+
+Warning in module CBAL in file caxsrefl3d.f: Variables may be used before set:
+    IEXC used at line 4618 file caxsrefl3d.f
+    IEXC set at line 4633 file caxsrefl3d.f
+    J used at line 4597 file caxsrefl3d.f
+    J set at line 4625 file caxsrefl3d.f
+    M used at line 4597 file caxsrefl3d.f
+    M set at line 4632 file caxsrefl3d.f
+
+Warning in module BAND in file caxsrefl3d.f: Variables declared but never
+ referenced:
+    G declared at line 6181 file caxsrefl3d.f (dummy argument)
+    KAPL declared at line 6176 file caxsrefl3d.f (dummy argument)
+    KAPR declared at line 6176 file caxsrefl3d.f (dummy argument)
+
+ 0 syntax errors detected in file caxsrefl3d.f
+ 18 warnings issued in file caxsrefl3d.f
+
+File stack.f:
+ 0 syntax errors detected in file stack.f
+File pccslab.f:
+
+Warning in module PCCSLAB in file pccslab.f: Variables declared but never
+ referenced:
+    RMUF declared at line 53 file pccslab.f
+
+ 0 syntax errors detected in file pccslab.f
+ 1 warning issued in file pccslab.f
+
+File dlmsf2in3.f:
+
+Warning in module DLMSF2IN3 in file dlmsf2in3.f: Variables declared but never
+ referenced:
+    GAMMA declared at line 102 file dlmsf2in3.f
+
+ 0 syntax errors detected in file dlmsf2in3.f
+ 1 warning issued in file dlmsf2in3.f
+
+Warning: Common block X1 unused in the following modules:
+    Unused in module PCSLAB line 6018 file caxsrefl3d.f
+
+Warning: Common block TOTMTRX88 unused in the following modules:
+    Unused in module TMTRXN line 3586 file caxsrefl3d.f
+
+Warning: Common block TOITMT Elements set but never used:
+    NAXSM
+
+Warning: Common block TOTMT Elements set but never used:
+    ALPHAE BETAE
+
+Warning: Common block TOTMT Elements never used, never set:
+    REV
+
+Warning: Subprogram PCSLAB never invoked
+    Defined in module PCSLAB line 5958 file caxsrefl3d.f
+
+Warning: Subprogram PCCSLAB argument arrayness mismatch at position 12:
+    Dummy arg DL in module PCCSLAB line 1 file pccslab.f is whole array
+    Actual arg DL(1,1,1) in module CAXSREFL3D line 1868 file caxsrefl3d.f is
+ array element
+  and at position 13:
+    Dummy arg DR in module PCCSLAB line 1 file pccslab.f is whole array
+    Actual arg DR(1,1,1) in module CAXSREFL3D line 1868 file caxsrefl3d.f is
+ array element
+
+Warning: Subprogram PCCSLAB argument arrayness mismatch at position 12:
+    Dummy arg DL in module PCCSLAB line 1 file pccslab.f is whole array
+    Actual arg DL(1,1,IPL) in module CAXSREFL3D line 1882 file caxsrefl3d.f is
+ array element
+  and at position 13:
+    Dummy arg DR in module PCCSLAB line 1 file pccslab.f is whole array
+    Actual arg DR(1,1,IPL) in module CAXSREFL3D line 1882 file caxsrefl3d.f is
+ array element
+
+Warning: Subprogram PCCSLAB argument arrayness mismatch at position 12:
+    Dummy arg DL in module PCCSLAB line 1 file pccslab.f is whole array
+    Actual arg DL(1,ICOMP,1) in module CAXSREFL3D line 1939 file caxsrefl3d.f 
+ is array element
+  and at position 13:
+    Dummy arg DR in module PCCSLAB line 1 file pccslab.f is whole array
+    Actual arg DR(1,ICOMP,1) in module CAXSREFL3D line 1939 file caxsrefl3d.f 
+ is array element
+
+Warning: Subprogram PCCSLAB argument arrayness mismatch at position 12:
+    Dummy arg DL in module PCCSLAB line 1 file pccslab.f is whole array
+    Actual arg DL(1,ICOMP,IPL) in module CAXSREFL3D line 1967 file 
+ caxsrefl3d.f is array element
+  and at position 13:
+    Dummy arg DR in module PCCSLAB line 1 file pccslab.f is whole array
+    Actual arg DR(1,ICOMP,IPL) in module CAXSREFL3D line 1967 file 
+ caxsrefl3d.f is array element
+
+Warning: Subprogram PCCSLABC never defined
+    Invoked in module CAXSREFL3D line 1933 file caxsrefl3d.f
+
+Warning: Subprogram HOSLAB argument arrayness mismatch at position 7:
+    Dummy arg DL in module HOSLAB line 2341 file caxsrefl3d.f is whole array
+    Actual arg DL(1,1,1) in module CAXSREFL3D line 1852 file caxsrefl3d.f is
+ array element
+  and at position 8:
+    Dummy arg DR in module HOSLAB line 2341 file caxsrefl3d.f is whole array
+    Actual arg DR(1,1,1) in module CAXSREFL3D line 1852 file caxsrefl3d.f is
+ array element
+
+Warning: Subprogram HOSLAB argument arrayness mismatch at position 7:
+    Dummy arg DL in module HOSLAB line 2341 file caxsrefl3d.f is whole array
+    Actual arg DL(1,ICOMP,1) in module CAXSREFL3D line 1910 file caxsrefl3d.f 
+ is array element
+  and at position 8:
+    Dummy arg DR in module HOSLAB line 2341 file caxsrefl3d.f is whole array
+    Actual arg DR(1,ICOMP,1) in module CAXSREFL3D line 1910 file caxsrefl3d.f 
+ is array element
+
+Warning: Subprogram PAIR argument usage mismatch at position 2:
+    Dummy arg QIL in module PAIR line 5852 file caxsrefl3d.f is modified
+    Actual arg QIL in module CAXSREFL3D line 1891 file caxsrefl3d.f may be
+ same as arg 6: QIL
+  and at position 3:
+    Dummy arg QIIL in module PAIR line 5852 file caxsrefl3d.f is modified
+    Actual arg QIIL in module CAXSREFL3D line 1891 file caxsrefl3d.f may be
+ same as arg 7: QIIL
+  and at position 4:
+    Dummy arg QIIIL in module PAIR line 5852 file caxsrefl3d.f is modified
+    Actual arg QIIIL in module CAXSREFL3D line 1891 file caxsrefl3d.f may be
+ same as arg 8: QIIIL
+ etc...
+
+Warning: Subprogram PAIR argument usage mismatch at position 2:
+    Dummy arg QIL in module PAIR line 5852 file caxsrefl3d.f is modified
+    Actual arg QIR in module CAXSREFL3D line 1985 file caxsrefl3d.f may be
+ same as arg 6: QIR
+  and at position 3:
+    Dummy arg QIIL in module PAIR line 5852 file caxsrefl3d.f is modified
+    Actual arg QIIR in module CAXSREFL3D line 1985 file caxsrefl3d.f may be
+ same as arg 7: QIIR
+  and at position 4:
+    Dummy arg QIIIL in module PAIR line 5852 file caxsrefl3d.f is modified
+    Actual arg QIIIR in module CAXSREFL3D line 1985 file caxsrefl3d.f may be
+ same as arg 8: QIIIR
+ etc...
+
+Warning: Subprogram PAIR argument usage mismatch at position 2:
+    Dummy arg QIL in module PAIR line 5852 file caxsrefl3d.f is modified
+    Actual arg QIL in module CAXSREFL3D line 2003 file caxsrefl3d.f may be
+ same as arg 6: QIL
+  and at position 3:
+    Dummy arg QIIL in module PAIR line 5852 file caxsrefl3d.f is modified
+    Actual arg QIIL in module CAXSREFL3D line 2003 file caxsrefl3d.f may be
+ same as arg 7: QIIL
+  and at position 4:
+    Dummy arg QIIIL in module PAIR line 5852 file caxsrefl3d.f is modified
+    Actual arg QIIIL in module CAXSREFL3D line 2003 file caxsrefl3d.f may be
+ same as arg 8: QIIIL
+ etc...
+
+Warning: Subprogram ZNSREFIND never defined
+    Invoked in module CAXSREFL3D line 1684 file caxsrefl3d.f
+
+Warning: Subprogram SORDALC never defined
+    Invoked in module CAXSREFL3D line 1741 file caxsrefl3d.f
+
+Warning: Subprogram BESSEL never invoked
+    Defined in module BESSEL line 2632 file caxsrefl3d.f
+
+Warning: Subprogram CNWF01 never invoked
+    Defined in module CNWF01 line 2796 file caxsrefl3d.f
+
+Warning: Subprogram CNWF01 argument arrayness mismatch at position 4:
+    Dummy arg C in module CNWF01 line 2796 file caxsrefl3d.f is whole array
+    Actual arg CNWJ(1,L) in module BESSEL line 2725 file caxsrefl3d.f is array
+ element
+
+Warning: Subprogram CNWF01 argument arrayness mismatch at position 4:
+    Dummy arg C in module CNWF01 line 2796 file caxsrefl3d.f is whole array
+    Actual arg CNWY(1,L) in module BESSEL line 2726 file caxsrefl3d.f is array
+ element
+
+Warning: Subprogram SETUP never invoked
+    Defined in module SETUP line 3232 file caxsrefl3d.f
+
+Warning: Subprogram CODD never invoked
+    Defined in module CODD line 5782 file caxsrefl3d.f
+
+Warning: Subprogram CEVEN never invoked
+    Defined in module CEVEN line 5817 file caxsrefl3d.f
+
+Warning: Subprogram GNZBESS never defined
+    Invoked in module TMTRXN line 3712 file caxsrefl3d.f
+
+Warning: Subprogram XMAT never invoked
+    Defined in module XMAT line 3819 file caxsrefl3d.f
+
+Warning: Subprogram ZSU argument arrayness mismatch at position 3:
+    Dummy arg X in module ZSU line 4395 file caxsrefl3d.f is whole array
+    Actual arg QH1(1,IGK2) in module BAND line 6240 file caxsrefl3d.f is array
+ element
+
+Warning: Subprogram ZSU argument arrayness mismatch at position 3:
+    Dummy arg X in module ZSU line 4395 file caxsrefl3d.f is whole array
+    Actual arg QH2(1,IGK2) in module BAND line 6241 file caxsrefl3d.f is array
+ element
+
+Warning: Subprogram ZSU argument arrayness mismatch at position 3:
+    Dummy arg X in module ZSU line 4395 file caxsrefl3d.f is whole array
+    Actual arg QINV1(1,IGK2) in module PAIR line 5920 file caxsrefl3d.f is
+ array element
+
+Warning: Subprogram ZSU argument arrayness mismatch at position 3:
+    Dummy arg X in module ZSU line 4395 file caxsrefl3d.f is whole array
+    Actual arg QINV2(1,IGK2) in module PAIR line 5921 file caxsrefl3d.f is
+ array element
+
+Warning: Subprogram ERRCHK argument mismatch at position 2:
+    Dummy arg NARRAY in module ERRCHK line 5255 file caxsrefl3d.f is type 
+ intg(14)
+    Actual arg 58HIN CNAA  ,.. in module CNAA line 4793 file caxsrefl3d.f is
+ type holl*58
+
+Warning: Subprogram ERRPRT argument mismatch at position 2:
+    Dummy arg NARRAY in module ERRPRT line 5375 file caxsrefl3d.f is type 
+ intg(14)
+    Actual arg 59HTHE FOLLOW.. in module ONECHK line 5367 file caxsrefl3d.f is
+ type holl*59
+
+Warning: Subprogram ONECHK never invoked
+    Defined in module ONECHK line 5332 file caxsrefl3d.f
+
+Warning: Subprogram DLMSF2IN3 argument arrayness mismatch at position 5:
+    Dummy arg DLM in module DLMSF2IN3 line 1 file dlmsf2in3.f has 2 dims size 
+ 2023
+    Actual arg DLM in module PCCSLAB line 136 file pccslab.f has 2 dims size 
+ 867
+
+Warning: Subprogram BLF2IN3 never defined
+    Invoked in module PCCSLAB line 148 file pccslab.f
+
+Warning: Subprogram GEN2IN3VEC never defined
+    Invoked in module PCCSLAB line 158 file pccslab.f
+
+Warning: Subprogram SECULAR never defined
+    Invoked in module PCCSLAB line 161 file pccslab.f
+
+Warning: Subprogram LATGEN2D never defined
+    Invoked in module DLMSF2IN3 line 193 file dlmsf2in3.f
+
+Warning: Subprogram MZERO argument data type mismatch at position 1:
+    Dummy arg A in module MZERO line 844 file dlmsf2in3.f is type real*8
+    Actual arg DLM in module DLMSF2IN3 line 213 file dlmsf2in3.f is type 
+ cplx*16
+
+Warning: Subprogram MZERO argument arrayness mismatch at position 1:
+    Dummy arg A in module MZERO line 844 file dlmsf2in3.f has 1 dim size 0
+    Actual arg DLM in module DLMSF2IN3 line 213 file dlmsf2in3.f has 2 dims 
+ size 2023
+
+Warning: Subprogram MZERO argument data type mismatch at position 1:
+    Dummy arg A in module MZERO line 844 file dlmsf2in3.f is type real*8
+    Actual arg DLM1 in module DLMSF2IN3 line 214 file dlmsf2in3.f is type 
+ cplx*16
+
+Warning: Subprogram MZERO argument arrayness mismatch at position 1:
+    Dummy arg A in module MZERO line 844 file dlmsf2in3.f has 1 dim size 0
+    Actual arg DLM1 in module DLMSF2IN3 line 214 file dlmsf2in3.f has 2 dims 
+ size 2023
+
+Warning: Subprogram MZERO argument data type mismatch at position 1:
+    Dummy arg A in module MZERO line 844 file dlmsf2in3.f is type real*8
+    Actual arg DLM2 in module DLMSF2IN3 line 215 file dlmsf2in3.f is type 
+ cplx*16
+
+Warning: Subprogram MZERO argument arrayness mismatch at position 1:
+    Dummy arg A in module MZERO line 844 file dlmsf2in3.f has 1 dim size 0
+    Actual arg DLM2 in module DLMSF2IN3 line 215 file dlmsf2in3.f has 2 dims 
+ size 2023

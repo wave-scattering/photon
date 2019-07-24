@@ -1,0 +1,57 @@
+#*************************************************************
+#
+# 1st attempt to make a makefile for the Fortran Compiler.
+#  
+# 29/01/97  Konijnenburg
+#
+#*************************************************************
+
+# define compiler
+CC =           ifort
+
+# define some flags
+NAME =         -o $@
+
+#define linker flags on SARA:
+#LFLAGS = -L/usr/local/lib -lnag 
+#define linker flags on RUUNAT:
+LFLAGS = -lnag
+
+#define compiler flags   -g  -C  -O 
+# -o2 -qarch=pwr3 -qtune=pwr4    #special optimization for SOLO     
+#CFLAGS = -o2 -qarch=pwr3 -qtune=pwr4
+CFLAGS = -O
+
+#***************************************************************
+# All files needed for the Server and the client
+
+#     include files
+#     source files
+SRC = caxsrefl3d.f stack.f sordalc.f gzbsvd3d.f zcopyv.f zcopya.f\
+znsrefind.f pccslab.f pccslabc.f tmtaxsp.f dlmsf2in3.f latgen2d.f order2dl.f\
+blf2in3.f blmy.f gen2in3vec.f secular.f secularc.f gnzbess.f\
+zbessf.f bessjy.f bessik.f beschb.f chebev.f
+
+#     object files
+OBJ = caxsrefl3d.o stack.o sordalc.o gzbsvd3d.o zcopyv.o zcopya.o\
+znsrefind.o pccslab.o pccslabc.o tmtaxsp.o dlmsf2in3.o latgen2d.o order2dl.o\
+blf2in3.o blmy.o gen2in3vec.o secular.o secularc.o gnzbess.o\
+zbessf.o bessjy.o bessik.o beschb.o chebev.o
+
+#      executable files
+EXEC = rncaxsrefl1
+
+#all:     $(EXEC)
+all:    rncaxsrefl1
+
+.SUFFIXES: .ic .o .c
+.f.o:
+	$(CC) $(CFLAGS) $(NAME) -c $< 
+
+all:     $(EXEC)
+
+#$(EXEC): $(OBJ)
+rncaxsrefl1: $(OBJ)
+	$(CC) $(CFLAGS) $(OBJ) -o $(EXEC) $(LFLAGS) 
+
+#***************************************************************

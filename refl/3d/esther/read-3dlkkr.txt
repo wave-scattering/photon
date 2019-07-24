@@ -1,0 +1,338 @@
+=========================================
+=========================================
+=========================================
+=========================================
+
+The code is an extension of the code by 
+
+N. Stefanou, V. Yannopapas, and A. Modinos,
+"Heterostructures of photonic crystals: frequency bands and transmission
+coefficients," Comp. Phys. Commun. {\bf 113}, 49-77 (1998). 
+
+"MULTEM 2: A new version of the program for transmission
+and band calculations of photonic crystals,"
+Comp. Phys. Commun. {\bf 132}, 189-196 (2000).
+
+
+
+which in turn is a vector extension of the scalar LEED
+code by Pendry as described in his book on 
+
+"Low Energy Electron Diffraction"
+(Academic Press, London, 1974)
+
+
+=========================================
+As vector nature of the code may obscure some underlying
+physical principles, you may find it useful to have a look
+at 
+
+
+E. G. McRae, Surf. Sci. {\bf 8}, 14-34 (1967).
+Self-consistent multiple-scattering approach to the interpretation of
+low-energy electron diffraction.
+A theory based on the MST approach developed by Lax \ct{La}.
+
+
+E. G. McRae, Surf. Sci. {\bf 11}, 479-491 (1968).
+Electron diffraction at crystal surfaces I. Generalization of Darwin's
+dynamical theory.
+The first useful treatment of LEED in terms of self-consistent Bloch-wave
+method.
+
+
+E. G. McRae, Surf. Sci. {\bf 11}, 492-507 (1968).
+Electron diffraction at crystal surfaces II. The double-diffraction
+picture. Introduced Q-matrices
+
+
+E. G. McRae and D. E. Winkel, 
+Surf. Sci. {\bf 14}, 407-411 (1969).
+Electron diffraction at crystal surfaces III.
+Effect of a layer of foreign atoms on secondary peaks in 
+low-energy diffraction intensity curves.
+The selvedge atom layer with the same periodicity as the substrate.
+
+
+P. J. Jennings and E. G. McRae, Surf. Sci. {\bf 23}, 
+363-388 (1970).
+Electron diffraction at crystal surfaces IV. Computation of LEED
+intensities for ``muffin-tin" models with application to 
+tungsteen (001).
+
+
+=========================================
+The code extends of the Stefanou, Yannopapas, and Modinos (SYM) 
+code by
+
+
+1) incoporating the option of complex lattices.
+In other words, it is also possible to perfom calculations
+for not simple Bravais lattices. In doing so, the code
+employs a general lattice summation decsribed in
+
+J. M. McLaren, S. Crampin, D. D. Vvedensky, R. C. Albers,
+and J. B. Pendry, \CPC{60}, 365-389 (1990).
+Layer KKR electronic structure code for bulk and interface geometries.
+
+2) incoporating the option of non-spherical scatteres.
+At present, any axially symmetric scatterer is possible.
+
+The code achieves that by incoporating Mishchenko code,
+as improved in 
+
+A. Moroz, "Improvement of Mishchenko's T-matrix code for absorbing 
+  particles,"  Appl. Opt. 44(17), 3604-3609 (2005).
+ (http://ao.osa.org/abstract.cfm?id=84141)
+
+=========================================
+
+DICTIONARY: 
+
+Specular R and T refers to what it would be in the case of an interface 
+of two homogeneous media. Due to Bragg periodicity you may
+have additionally several other non-specular reflected and trasmitted beams 
+(i.e., reflected at different angle than is that of incident beam). 
+
+
+=========================================
+
+Let us take the triangular lattice as the first plane in the stack.
+The stack is then formed by alternating triangular and kagome lattices.
+The respective shift is the same for any two neighbouring 
+layers of the stack.
+In the parallel direction, the shift of the respective origins
+of coordinates in the neighbouring planes is along the diagonal 
+of a rhombus formed by the
+two basis vectors of an underlying triangular lattice.
+The half-length of the diagonal is according to the Pythagorean
+theorem a*\sqrt{3}/2. The elementary shift along the diagonal is then
+
+                  (a*\sqrt{3}/2)/3=a/(2*\sqrt{3})
+
+The diagonal subtends with the x- (y-) axis the angle of 30 (60) degree.
+Hence the elementary shift along the x-axis is, as expected
+
+               \Delta_x= cos (30) * a/(2*\sqrt{3}) = a/4
+
+whereas the elementary shift along the y-axis is
+
+               \Delta_y= cos (60) * a/(2*\sqrt{3}) = a/(4*\sqrt{3})
+
+The corresponding components of the DL, DR vectors should then 
+be the halfs of the above shifts.
+
+=========================================
+
+The routines PCCSLAB and PCCSLABC are both for complex lattices.
+The routine PCCSLAB is for spherical scatteres, whereas PCCSLABC
+is intended for a scattere of general axial symmetric shape.
+
+=========================================
+
+CFAC=CONE if only if all the particles are in the plane, i.e.
+have the very same "z" coordinate.
+
+Otherwise, CFAC = exp (ci*kappa*dz)
+where dz is the z-coordinate of a given particle.
+=========================================
+
+
+
+in the program it says that the rmuf(RTA) should be defined as rmuf(BSC)*sqrt(2), 
+because in the RTA calculations the rmuf is not defined with respect to the 
+cubic unit cell but with respect to the hexagonal primitive unit cell and 
+because the conventional cubic unit cell has vector-length A=2. However, 
+the fact that A=2 is not taken into account in the definition of 
+rmuf(BSC) and therefore  the formula should be rmuf(BSC)/sqrt(2) 
+ 
+If I would do sqrt(2)*rmuf(BSC)=sqrt(2)*sqrt(2)/4, as suggested 
+in the program, this yields 1/2
+However, the unit hexagonal vector is four sphere radii long, so 
+rmuf should be 1/4.
+ 
+The unit Bravais lattice vector has a normalized length of 1, which is
+by definition the center-to-center distance in 
+between nearest-neighbour spheres. In the close-packed case the 
+spheres are touching, which then corresponds to RMUF=1/2
+as it should be.
+ 
+In an fcc lattice, the nearest-neighbour spheres are for instance that 
+in the center and in the corner of a given side of a conventional cubic unit cell. 
+ 
+The edge and the side center form a isosceles rectangular triangle
+with hypotenuse of length 2 and the legs of length 1.
+
+=========================================
+
+In the stack settings you can never ever have 
+
+any of DR(3,*,*) or DL(3,*,*) equal to zer0!!!
+
+
+By the very definition, DR's for each of the separate layers of the
+stack defines a translation vectors which transfer the origin of coordinates
+of a given layer to the right at the boundary, typically half in 
+between the neighbouring layers in the stack. Since the layers are, 
+by definition, at different heights along the stacking z-direction, 
+DR(3,*,*) is never ever equal zero.
+
+
+
+DL(*,*,iplane) then picks up the boundary point resulting from the action of
+DR(*,*,iplane-1) on the origin of coordinate in the (iplane-1)th layer, 
+and shifts the point again to the right towards the origin of coordinate 
+in the (iplane)th layer. For the similar reasons, DL(3,*,*) is 
+never ever equal zero.
+
+
+
+A complex lattice within a given layer, which is formed by several
+interpenetrating simple Bravais lattices is then unambigously
+determined by POS vectors set-up in dlmsf2in3.f
+ 
+=========================================
+
+
+Look which option you have for RTA, i.e., if the specular option is on.
+
+In the general case, both R and T is given by the specular and a
+plurality ofnonspecular beams. The program only calculates 
+independent quantities. A is then given simply as
+
+A=1-R-T
+
+
+In the case of nonabsorbing spheres you can still obtain a large value
+of A if ynspc on on. 
+
+In the latter case, only the specular beam contribution
+to R and T is taken into account. Then clearly R+T<1 and A is nonzero.
+Please, check if this is the case.
+
+
+=========================================
+
+ 
+Unlike nonzero A, T above 1 is a problem - it points to some bug.
+ 
+As a remainder, 
+ 
+- coordinates in "stack" are for connecting the respective origins 
+of coordinates in different neighbouring layers of the stack;
+ 
+- coordinates in "dlmsf2in3,f" are for the coordinates of different
+ scatterers within the selected 2D unit cell  of a given layer of 
+the stack w.r.t. to the origin of coordinates of the layer.
+ 
+=========================================
+
+All the lenghts are in the units of the basis vector AR1 of the
+underlying Bravais
+lattice, which is oriented along the -axis and has by default unit
+length.
+
+See the program lines
+
+AR1(1)= ALPHA 
+AR1(2)= 0.D0 
+
+in caxsrefl3f.f
+
+
+=========================================
+
+Where does the program alternate IPLP between a layer with 1 particle
+and a layer with 3 particles? Does that already happen in caxsrefl3d? Do
+I have to define IPLP separately for every IPL?
+
+===> caxsrefl3d first sets iplp=1
+
+After the first visit to pccslabc.f is iplp reassigned to 2.
+This "binary" option was chosen because of zinc blend,
+wherein a unit slice is formed of two different layers.
+
+Do I have to use pccslab.f or pccslabc.f?
+
+===> pccslabc.f is for complex lattices (more than 1 scatterer per 2D
+unit cell); pccslab.f is only for 2D Bravais lattices
+
+Where is the core-shell structure of the particles defined? The core
+shell structure is mentioned in caxsrefl3d, but I think finally only
+EPSSPH is given into pccslab, which does not contain separate values for
+core and shell.
+
+===> have to check yet; as far as I remember, directly in tmtrxn.f
+routine
+
+
+=========================================
+
+
+... a relative orientation of lattices is also important. Are the
+respective lattices at the different stack floors in "parallel", i.e.,
+one can select two primitive lattice vectors which are parallel?
+
+
+
+=========================================
+
+                       	QUESTIONS & ANSWERS
+
+
+________________________________________________________
+
+
+Q: Your input parameters are specified in the body of the program? Your don't use any type of input file in the manner of Multem program, do you?
+
+A: Yes, I don't use any type of input file in the manner of Multem program. It boils down
+to the use of my compiler, which does not allow that. It is pity that beautiful
+IBM RS/6000 machines, which enabled extende precision calculations,  gave place to PC clusters.
+
+________________________________________________________
+
+
+Q: In description of your program it is said that it can output not just reflectance, transmittance, but also change of phase during (specular) reflection. Can it somehow output also phase of transmitted wave. And how to switch these options on? Because in the present state only amplitudes of reflectance and transmittance are outputted.
+
+A: See l. 125 of the code:
+
+      PARAMETER (ynphase=.false.)      ! true only if reflection phase
+
+Set the value of to .true. to switch on the option.
+
+Yes, in principle, the code can be easily amended to output also the
+phase of a specular transmitted beam (transmitted wave = a sum of a plurality of
+transmitted beams).
+
+
+________________________________________________________
+
+Q: When you tell about several scatterers in the primitive cell, you mean 2D cell, right? Or one can specify scatterer distribution in 3D elementary cell.
+    I don't quite understood this part of readme:
+
+    "CFAC=CONE if only if all the particles are in the plane, i.e.
+    have the very same "z" coordinate.
+
+    Otherwise, CFAC = exp (ci*kappa*dz)
+    where dz is the z-coordinate of a given particle. "
+
+
+
+A: The chief assumptions is that you can dissect a crystal into a set of repeating
+nonoverlapping slices. In some case, all the centers of scatterers lie 
+ at the same z-height within a slice. This may not be true in the most general case.
+
+In principle, you can take the slice as entire 3D unit cell. Computationally it may cause the code, which is quite fragile when run in a double precision, to collapse. The reason is an increase in the size of a matrix to be inverted, which is not numerically stable. Each additional scatterer within a unit cell causes the size of a matrix to increase by its
+nominal size per single scatterer.
+
+________________________________________________________
+________________________________________________________
+________________________________________________________
+________________________________________________________
+________________________________________________________
+________________________________________________________
+________________________________________________________
+________________________________________________________
+________________________________________________________
+________________________________________________________
+
