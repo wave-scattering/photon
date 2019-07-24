@@ -237,7 +237,7 @@ c The coating layer to which material data are read in
 * test:  eps=15, r=0.4705
 *
 c sphere (core) dielectric constant  (depending whether ync is 'y' or 'n')   
-      PARAMETER (CCEPS=15.D0)
+      PARAMETER (CCEPS=10.D0)
 C >>>     SPHERE (OUTER SHELL SCATTERER) PERMITTIVITY                  <<<
 *  n(silica)=1.45  <--->    EPS(1)=2.1025D0
 *  n(ZnS)=2.       <--->    EPS(1)=4.D0
@@ -255,7 +255,6 @@ c Quantities for the use of the material data
       REAL*8 omf(NFIN,NDM),omxf,omxp,omega,plasma,reepsz
       COMPLEX*16 ceps1(NFIN,NDM),ZEPS1(NDM),ci
 c OMF is plasma/omega, CEPS1 contains the complex (sphere) EPS
-c
 *  
 C ..  SCALAR VARIABLES ..   C
       INTEGER      LMAX,I,IGKMAX,IGK1,IGK2,IGMAX,KTYPE,KSCAN,NCOMP,IG1  
@@ -465,7 +464,7 @@ C  different NDGS-values are recommended.
       END IF     
 C  
        DATA KTYPE/1/   
-C     KTYPE=     1: THE DIRECTION OF AN INCIDENT  EM WAVE IS SPECIFIED  
+C     KTYPE=     1: THE DIRECTION OF AN INCIDENT EM WAVE IS SPECIFIED  
 C                   BY THE POLAR ANGLES OF INCIDENCE "THETA" AND "FI".  
 C                   THE PROGRAM CALCULATES THE TRANSMISSION,REFLECTION  
 C                   AND  ABSORPTION   COEFFICIENTS OF  A  FINITE  SLAB     
@@ -488,7 +487,7 @@ C                2: SCANNING OVER WAVELENGTHS
 C     KEMB=0        EMBEDDING MEDIUM ON THE LEFT AND RIGHT IDENTICAL
 C     KEMB=1        DIFFERENT EMBEDDING MEDIA ON THE LEFT AND RIGHT 
 
-      DATA LMAX/7/
+      DATA LMAX/4/
 C     LMAX        : THE ACTUAL CUTOFF IN SPHERICAL WAVES EXPANSIONS  
       DATA NBAS/1/
 C     NBAS        : THE ACTUAL NUMBER OF ATOMS PER UNIT CELL
@@ -498,9 +497,9 @@ C=======================================================================
 * Setting up the direct and reciprocal lattice  
       DATA ALPHA/1.d0/
 C     ALPHA       : LENGTH OF THE PRIMITIVE VECTOR OF THE TWO-DIMENSIONAL  
-C                   LATTICE  along the x-axis.
+C                   LATTICE along the x-axis.
 C                   IN PROGRAM UNITS THE SIZE OF ALPHA SERVES  
-C                   AS  THE UNIT LENGTH.  THUS  ALPHA MUST BE EQUAL TO  
+C                   AS THE UNIT LENGTH. THUS ALPHA MUST BE EQUAL TO
 C                   1.D0 
       DATA  ALPHAP/1.d0/
 C     ALPHAP      : LENGTH OF THE SECOND PRIMITIVE VECTOR OF THE
@@ -944,10 +943,10 @@ C--------/---------/---------/---------/---------/---------/---------/--
          write(nout,*)'#TM or p-polarization'
       end if
 *
-      if (theta.ne.0.) then
+      if (theta.ne.0.d0) then
          write(nout,*)'#Angle of incidence in [pi]:',THETA
       end if
-      if (fi.ne.0.) then
+      if (fi.ne.0.d0) then
          write(nout,*)'#Polar angle of incidence in [pi]:',FI
       end if
 *
@@ -1001,7 +1000,7 @@ C--------/---------/---------/---------/---------/---------/---------/--
       do icomp=1,ncomp
       write(nout,*)'#ICOMP=', ICOMP
       write(nout,*)'#NLAYER=', NLAYER(ICOMP),',',' NPLAN=',NPLAN(ICOMP)
-        IF((IT(ICOMP).EQ.1).and.(D(icomp).ne.0)) THEN 
+        IF((IT(ICOMP).EQ.1).and.(D(icomp).ne.0.d0)) THEN
           write(nout,*)'#D(icomp)=',D(icomp)
           write(nout,*)'#EPS2(icomp)=',EPS2(icomp) 
         END IF      
@@ -1082,7 +1081,7 @@ C--------/---------/---------/---------/---------/---------/---------/--
          write(40,*)'#TM or p-polarization'
       end if
 *
-      if (theta.ne.0.) then
+      if (theta.ne.0.d0) then
          write(40,*)'#Angle of incidence in [pi]:',THETA
       end if
       if (fi.ne.0.) then
@@ -1265,7 +1264,7 @@ c      1910                 Gold
 c      1910                 Copper
 c      2030                 Aluminium
 c
-      NSTEP=500
+      NSTEP=2
 C     NSTEP          : NUMBER OF EQUALLY SPACED POINTS BETWEEN ZINF, ZSUP   * 
       IF(NSTEP.LE.1)        STOP 'ILLEGAL INPUT VALUE OF  NSTEP ' 
 C >>> elementary step on the scanning interval:
@@ -1287,11 +1286,10 @@ C************************************************************
       end if                      ! material constant reading      
 
 *********************
- 52   ZVAL0=ZINF-ZSTEP
 
-      ZVAL0=3.7d0
-      ZSTEP=.1d0/dble(nstep)
-
+ 52   ZVAL0=3.7d0  !0.3 d0  !3.7d0
+      ZSTEP=.1d0/dble(nstep)  !0.7d0/dble(nstep)  !
+      ZVAL0=ZVAL0-ZSTEP
 
       DO 300 ISTEP=1,NSTEP   ! SCANNING OVER FREQUENCIES/WAVELENGTHS
 
@@ -1398,13 +1396,13 @@ C
       EFIRST=EPS1(1)  
       RAP=S(1,1)*KAPPA0/2.D0/PI          !=rsnm/LAMBDA
 *
-      CALL PCSLAB(YNC,LMAX,IGMAX,RAP,EPS1(1),EPSSPH(1,1),MU1(1)
-     &     ,MUSPH(1,1),KAPPA,AK,DL(1,1,1),DR(1,1,1),G,ELM,A0,EMACH,
-     &     QIL,QIIL,QIIIL,QIVL)
+!      CALL PCSLAB(YNC,LMAX,IGMAX,RAP,EPS1(1),EPSSPH(1,1),MU1(1)
+!     &     ,MUSPH(1,1),KAPPA,AK,DL(1,1,1),DR(1,1,1),G,ELM,A0,EMACH,
+!     &     QIL,QIIL,QIIIL,QIVL)
 
-cp      CALL PCCSLAB(YNC,LMAX,IGMAX,NBAS,RAP,EPS1(1),EPSSPH(1,1)
-cp     &  ,MU1(1),MUSPH(1,1),KAPPA,AK,DL(1,1,1),DR(1,1,1)
-cp     &     ,G,A0,EMACH,QIL,QIIL,QIIIL,QIVL)
+      CALL PCCSLABC(YNC,LMAX,IGMAX,NBAS,RAP,EPS1(1),EPSSPH(1,1)
+     &  ,MU1(1),MUSPH(1,1),KAPPA,AK,DL(1,1,1),DR(1,1,1)
+     &     ,G,A0,EMACH,QIL,QIIL,QIIIL,QIVL)
 *
 *--------/---------/---------/---------/---------/---------/---------/--
       IF(NPLAN(1).GE.2) THEN  
@@ -2594,8 +2592,8 @@ C     <<<  AE,AH ORDERED FROM (LM)=(00)=1, ETC.
 C                           WITH AE(*,1) AND AH(*,1).EQUIV.0
 C     ==========
 C     THIS ROUTINE CALCULATES THE EXPANSION COEFFICIENTS 'AE,AH' OF AN  
-C     INCIDENT PLANE ELECTROMAGNETIC WAVE OF WAVE VECTOR  'KAPPA' WITH  
-C     COMPONENTS PARALLEL TO THE SURFACE EQUAL TO   '(GK(1),GK(2))'
+C     INCIDENT ELECTROMAGNETIC PLANE WAVE OF WAVE VECTOR  'KAPPA' WITH  
+C     COMPONENTS PARALLEL TO THE SURFACE EQUAL TO '(GK(1),GK(2))'
 C     IN SPHERICAL COORDINATES ACCORDING TO EQS. (19-20) OF 
 C     CPC 132, 189 (2000)].  
 C    
@@ -2978,7 +2976,7 @@ C=======================================================================
       SUBROUTINE TMTRXN(YNC,LMAX,RAP,CSPHEPS,CMEDEPS,CMEDMU,CSPHMU,
      + TE,TH)  
 *--------/---------/---------/---------/---------/---------/---------/--
-C >>> YNC,LMAX,RAP,CSPHEPS,CMEDEPS,CMEDMU,CSPHMU
+C >>> YNC,LMAX=LMAX1D,RAP,CSPHEPS,CMEDEPS,CMEDMU,CSPHMU
 C <<< TE,TH
 C ==========
 C     TH     : -i*\sg t_{M}    
@@ -2986,11 +2984,12 @@ C     TH     : -i*\sg t_{E}    = i*sin(eta)*exp(eta), eta ... phase-shift
 C !!! Note the following ordering: 
 C !!! TH(L) corresponds to the T matrix component with angular-momentum L-1 !!! 
 C !!!                [The same for TE(L)]
-C     Therefore, for a given LMAX, TH and TE are produced up to
-C     LMAX+1 here!!!
+C     Therefore, for a given LMAX, TH(L) and TE(L) are produced up to
+C     physical L=LMAX-1 here!!!
+C     TH(1) and TE(1) are not assigned
 C ==========
 C     THIS SUBROUTINE RETURNES THE FIRST LMAX ELEMENTS OF THE T-MATRIX
-C     FOR THE SCATTERING  OF ELECTROMAGNETIC FIELD OF WAVE-LENGHT LAMDA 
+C     FOR THE SCATTERING  OF ELECTROMAGNETIC FIELD OF WAVE-LENGTH LAMDA 
 C     BY A SINGLE SPHERE OF RADIUS S.  
 C     YNC=y if sphere is coated, otherwise ync=n
 C     LMAX   : MAXIMUM ANGULAR MOMENTUM - CALLED WITH LMAXD1 !!!
@@ -3024,7 +3023,7 @@ C     ------------------------------------------------------------------
 * ynperfcon=.true. if core is a perfect conductor, otherwise
 * ynperfcon=.false.
 *
-* LMAXD is the local LMAX
+* LMAXD in the main is here the local LMAX-1
 *
       PARAMETER (LMAXD=8)
 *
@@ -3041,7 +3040,6 @@ C     ------------------------------------------------------------------
       COMPLEX*16 ey,cqeps(2),cceps,cseps
       COMPLEX*16 RX(2),SG(2),ZEPS(lcs+1)
       COMPLEX*16 TE(LMAX),TH(LMAX)
-
 *
 * coated sphere declarations:
 *                    moving lmax ===>
@@ -3065,7 +3063,7 @@ C     ------------------------------------------------------------------
 C   
 C     READING THE DATA :
       DATA ey/(0.D0,1.D0)/,PI/3.14159265358979D0/ 
-      LMAXM1=LMAX-1
+      LMAXM1=LMAX-1       !=LMAXD in the main
 
 *
 *                      security    trap  - remainder
@@ -3264,7 +3262,7 @@ C     ASSIGNING VALUES TO ELEMENTS OF THE K-MATRIX
 C >>>
   30  CONTINUE
 *
-      DO 40 L=1,LMAXM1
+      DO 40 L=1,LMAXM1   != the physical values of l
 
 * In the following, one needs only phase shifts:
 *                        B/A  yields -tan(phase shift)
@@ -5532,7 +5530,7 @@ C
       IOD=0  
       DO 2 L=1,LMAX  
       DO 2 M=-L,L  
-      II=II+1  
+      II=II+1   !II=1 for l=1,m=-1
       IF(MOD((L+M),2).EQ.0)  THEN  
       IEV=IEV+1  
       BMEL1(IEV)=TH(L+1)*AH(K2,II+1)  
@@ -5561,7 +5559,7 @@ C
       IOD=0  
       DO 6 L=1,LMAX  
       DO 6 M=-L,L  
-      II=II+1  
+      II=II+1     !II=1 for l=1,m=-1
       IF(MOD((L+M),2).EQ.0)  THEN  
       IEV=IEV+1  
       LAME(K1)=LAME(K1)+DLME(K1,II+1)*BMEL2(IEV)  

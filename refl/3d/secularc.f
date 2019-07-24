@@ -73,7 +73,7 @@ C
 C  
 C ..  SCALAR ARGUMENTS ..  
 C  
-      INTEGER LMAX,NBAS
+      INTEGER, intent(in) :: LMAX,NBAS
 C  
 C ..  LOCAL SCALAR  
 C 
@@ -83,17 +83,15 @@ C ..  ARRAY ARGUMENTS ..
 C 
       INTEGER bindx(ncmb,ncmb)
       COMPLEX*16 CONE,CZERO
-      COMPLEX*16 TMT(4,LMTD,LMTD,NCMB)
-      COMPLEX*16 VEC(LMVT,LMVT,NFM)
-      COMPLEX*16 AMA(INMAXD,INMAXD)
+      COMPLEX*16, intent(in) :: TMT(4,LMTD,LMTD,NCMB)
+      COMPLEX*16, intent(in) :: VEC(LMVT,LMVT,NFM)
+      COMPLEX*16, intent(out) :: AMA(INMAXD,INMAXD)
 * 
       DATA CONE/(1.D0,0.D0)/,CZERO/(0.D0,0.D0)/
 *
       nlb=(lmax+1)**2
       LMXT=nlb-1 
       inmax2=2*nbas*LMXT
-
-      
 C--------/---------/---------/---------/---------/---------/---------/--
 C     DEFINING AMA(L,K)=1-TMT*VEC MATRIX WITH INDICES FROM
 C     1 TO INMAX2=2*NBAS*(NLB-1)

@@ -894,7 +894,7 @@ c >>> nn,ct,st,cf,lmax
 c <<< ylm
 c ==============
 c  This routine returns complex spherical harmonics in the 
-c  Condon-Shortley convention and  identical to those in 
+c  Condon-Shortley convention that are identical to those in
 c  Ligand Field Theory by C. J. Ballhausen.
 c
 c  Calculates spherical harmonics ylm(theta,fi) for complex*16 arguments.

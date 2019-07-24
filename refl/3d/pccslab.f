@@ -36,25 +36,25 @@ C
 C  
 C ..  SCALAR ARGUMENTS ..  
 C  
-      INTEGER    LMAX,IGMAX,NBAS
-      REAL*8     A0,EMACH   
-      COMPLEX*16 EPSMED,EPSSPH,MUMED,MUSPH,KAPPA,RAP,CRAP  
+      INTEGER, intent(in) ::    LMAX,IGMAX,NBAS,IPLP 
+      REAL*8, intent(in) ::      A0,EMACH   
+      COMPLEX*16, intent(in) ::  EPSMED,EPSSPH,MUMED,MUSPH,KAPPA,RAP,CRAP,CFAC
   
 C  
 C ..  ARRAY ARGUMENTS ..  
 C  
-      REAL*8     AK(2),DL(3),DR(3),G(2,IGD)  
-      COMPLEX*16 QI(IGKD,IGKD),QII(IGKD,IGKD),QIII(IGKD,IGKD)  
-      COMPLEX*16 QIV(IGKD,IGKD)  
+      REAL*8, intent(in) ::      AK(2),DL(3),DR(3),G(2,IGD)  
+      COMPLEX*16, intent(out) ::  QI(IGKD,IGKD),QII(IGKD,IGKD),QIII(IGKD,IGKD)  
+      COMPLEX*16, intent(out) ::  QIV(IGKD,IGKD)  
 C  
 C ..  LOCAL SCALARS  ..  
 C  
   
-      INTEGER    J,IFL,L,M,II,IGK1,IGK2,LMAX1,IGKMAX,LMTOT,IPLP  
+      INTEGER    J,IFL,L,M,II,IGK1,IGK2,LMAX1,IGKMAX,LMTOT
       INTEGER    IG1,IG2,ISIGN1,ISIGN2,K1,K2  
       INTEGER    IB,JB,NLB,NF,INMAX2
       REAL*8     SIGN1,SIGN2,SIGNUS,RMUF 
-      COMPLEX*16 CONE,CI,CZERO,CQI,CQII,CQIII,CQIV,CFAC  
+      COMPLEX*16 CONE,CI,CZERO,CQI,CQII,CQIII,CQIV 
 C  
 C ..  LOCAL ARRAYS  ..  
 C  
@@ -101,12 +101,13 @@ C
 *  
       IGKMAX=2*IGMAX  
       LMAX1=LMAX+1 
-      NLB=LMAX1*LMAX1
-      LMTOT=NLB-1   
+      NLB=LMAX1*LMAX1   !The length of (l,m) index including l=m=0
+                        !NLB is floating NYLRD
+      LMTOT=NLB-1       !The length of (l,m) index without l=m=0
       inmax2=2*nbas*LMTOT   
-      NF=NBAS*NBAS-NBAS+1 
+      NF=NBAS*NBAS-NBAS+1      !different possible pairing in complex lattice; NBAS=NF=1 for simple lattice
 *
-      DO 1 IG1=1,IGMAX  
+      DO 1 IG1=1,IGMAX   !generating reciprocal vectors
       GKK(1,IG1)=DCMPLX((AK(1)+G(1,IG1)),0.D0)  
       GKK(2,IG1)=DCMPLX((AK(2)+G(2,IG1)),0.D0)  
       GKK(3,IG1)=SQRT(KAPPA*KAPPA-GKK(1,IG1)*GKK(1,IG1)-  
@@ -118,7 +119,7 @@ C
 cx      if (ib.eq.1) 
 cx     &  CALL TMTRXN(YNC,LMAX1D,RAP,EPSSPH,EPSMED,MUMED,MUSPH,TE,TH) 
 cx      if (ib.gt.1)
-       CALL TMTRXN(YNC,LMAX1D,CRAP,EPSSPH,EPSMED,MUMED,MUSPH,TE,TH) 
+       CALL TMTRXN(YNC,LMAX1,CRAP,EPSSPH,EPSMED,MUMED,MUSPH,TE,TH) 
 C ==========
 C     TH     : -i*\sg t_{M}    
 C     TH     : -i*\sg t_{E}    = i*sin(eta)*exp(eta), eta ... phase-shift
@@ -126,11 +127,13 @@ C !!! Note the following ordering:
 C !!! TH(L) corresponds to the T matrix component with angular-momentum L-1 !!! 
 C !!!                [The same for TE(L)]
 C     Therefore, for a given LMAX, TH and TE are produced up to
-C     LMAX+1 here!!!
+C     LMAX1D here!!!
+!     TH(1) and TE(1) are not assigned
 C ==========
-      
-        DO JB=1,LMAX+1
-*                                         make TMAT from -i*sg*TMAT
+
+! make TMAT from -i*sg*TMAT; TH(1), TE(1) not assigned
+
+           DO JB=2,LMAX+1
             TMT(1,JB,IB)=TE(JB)*ci/kappa
             TMT(2,JB,IB)=TH(JB)*ci/kappa
            ENDDO
@@ -141,7 +144,7 @@ C ==========
       call dlmset(lmax)
       call dlmsf2in3(lmax,nbas,kappa,ak,dlm) 
 *
-      do ifl=1,nf
+      do ifl=1,nf    !nf=1 for a simple lattice
 *                            
 * (1,2) phase factor for diamond lattice
 *
@@ -151,7 +154,7 @@ c      if (ifl.eq.2) cfac=exp(-ci*kappa*sqrt(6.d0)/4.d0)
 c      if (ifl.eq.3) cfac=exp(ci*kappa*sqrt(6.d0)/4.d0)
 *                                (1,2) phase factor for diamond lattice
 *
-      call blf2in3(lmax,xmat(1,1,ifl),dlm(1,ifl))
+      call blf2in3(lmax,xmat(1,1,ifl),dlm(1,ifl))     !XMAT=A_{LL'} assigned including XMAT(1,1)
 *
       if (ifl.eq.1) then     !make g_{LL'} from A_{LL'}
        do j=1,nlb
@@ -176,7 +179,7 @@ c      if (ifl.eq.3) cfac=exp(ci*kappa*sqrt(6.d0)/4.d0)
 *
 *
 *
-      DO 8 IG2=1,IGMAX             !loop over "incident" plane waves
+      DO 8 IG2=1,IGMAX                !loop over "incident" plane waves
       GK(1)=      GKK(1,IG2)  
       GK(2)=      GKK(2,IG2)  
       GK(3)=SIGN2*GKK(3,IG2)

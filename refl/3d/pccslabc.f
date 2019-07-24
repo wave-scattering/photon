@@ -29,6 +29,11 @@ C
 C     \cite{Mis91} also claims the relation:
 C
 C                T_{lm,l'm}^{ij}= (-1)^{i+j} T_{l-m,l'-m}^{ij}
+!
+!     TMT(IFL,JA,JA,IB) with IFL=(1,4) corresponding to EE,EH,HE,HH
+!                       two middle indices are between (1,LMTD=LMAX1D*LMAX1D-1),
+!                       orresponding to L=(l,m)=(1,-1)=1,
+!                       whereas the 4th index labels different scatterers
 C
 C     IFL=2 is for va(2)-va(1)
 C     KAPPA0=DCMPLX(ZVAL,EPSILON)  ... SCANNING OVER FREQUENCIES  
@@ -36,6 +41,9 @@ C     KAPPA0=DCMPLX(2.D0*PI/ZVAL,EPSILON) ... SCANNING OVER WAVELENGTHS
 C     ZVAL=2*PI*ALPHA/LAMBDA (=KAPPA0 for  KSCAN=1)
 C  
 C     RAP=S(1,1)*KAPPA0/2.D0/PI     !=rmuf*ALPHA/LAMBDA =rsnm/LAMBDA 
+!
+!           XMAT=A_{L1L2}=4*PI* \SUM_{L3}(-1)**((L1-L2-L3)/2)*
+!                               <Y_{L2}Y_{L3}Y^*_{L1}>D_{L3}
 *--------/---------/---------/---------/---------/---------/---------/--
  
       IMPLICIT NONE 
@@ -82,6 +90,7 @@ C
       COMPLEX*16 AE(2,LM1SQD),AH(2,LM1SQD),GKK(3,IGD)  
       COMPLEX*16 GK(3),LAME(2),LAMH(2)  
       COMPLEX*16 XMAT(NYLRD,NYLRD,NFM),BMEL(INMAXD)
+      COMPLEX*16 TE(LMAX1D),TH(LMAX1D)
 *      
       COMPLEX*16 TMT(4,LMTD,LMTD,NCMB)
 *      
@@ -128,7 +137,7 @@ C
       NLB=LMAX1*LMAX1
       LMTOT=NLB-1   
       inmax2=2*nbas*LMTOT   
-      NF=NBAS*NBAS-NBAS+1 
+      NF=NBAS*NBAS-NBAS+1     !different possible pairing in complex lattice; NBAS=NF=1 for simple lattice
 *
       DO 10 IG1=1,IGMAX  
       GKK(1,IG1)=DCMPLX((AK(1)+G(1,IG1)),0.D0)  
@@ -143,12 +152,45 @@ cc      OPEN(61,FILE='tmteediag.dat')
 cc      OPEN(62,FILE='tmtmmdiag.dat')
 *
       DO IB=1,NBAS  ! Loop over different scattering centers
-*
+
+      go to 33
 cx      if (ib.eq.1)
-cx     &  CALL TMTRXN(YNC,LMAX1D,RAP,EPSSPH,EPSMED,MUMED,MUSPH,TE,TH)
+      CALL TMTRXN(YNC,LMAX1,RAP,EPSSPH,EPSMED,MUMED,MUSPH,TE,TH)
+C ==========
+C     TH     : -i*\sg t_{M}    
+C     TH     : -i*\sg t_{E}    = i*sin(eta)*exp(eta), eta ... phase-shift
+C !!! Note the following ordering: 
+C !!! TH(L) corresponds to the T matrix component with angular-momentum L-1 !!! 
+C !!!                [The same for TE(L)]
+C     Therefore, for a given LMAX, TH and TE are produced up to
+C     LMAX1D here!!!
+!     TH(1) and TE(1) are not assigned
+C ==========
+            TMT(:,:,:,:)=czero
+            II=1
+            DO JB=2,LMAX+1
+            ja=jb-1        !now physical l
+            do m=-ja,ja
+*                                         make TMAT from -i*sg*TMAT
+            TMT(1,II,II,IB)=TE(JB)*ci/kappa
+            TMT(2,II,II,IB)=TH(JB)*ci/kappa
+            
+            II=II+1
+            enddo
+           ENDDO
+
+         write(*,*)'TE(2)=',TE(2)*ci/kappa
+         write(*,*)'TH(2)=',TH(2)*ci/kappa
+
+         write(*,*)'TMT(1,2,2,1)=',TMT(1,2,2,1)
+         write(*,*)'TMT(2,2,2,1)=',TMT(2,2,2,1)
+        if (ii>lmtd+1) write(*,*) 'ii>lmtd+1 in pcclabc!'
 cx      if (ib.gt.1)
 *
-cm       CALL TMTAXSP(LMAX,CRAP,EPSSPH,EPSMED,TMT(1,1,1,ib))
+!      go to 44
+ 33   continue
+
+      CALL TMTAXSP(LMAX,CRAP,EPSSPH,EPSMED,TMT(1,1,1,ib))
 *
 C--------/---------/---------/---------/---------/---------/---------/--
 C
@@ -166,31 +208,34 @@ C    TMT's equal to i*sin(eta)*exp(eta), where eta is a phase-shift
 C--------/---------/---------/---------/---------/---------/---------/--
 
       
-        DO JB=1,LMTD
+        DO JB=1,LMTD        !LMTD=LMAX1D**2-1
          DO JA=1,LMTD
-         DO IFL=1,4        
+         DO IFL=1,4
 *                                         make TMAT from -i*sg*TMAT
 *
 cc         if ((ifl.eq.1).and.(ja.eq.jb))  write(61,*) TMT(IFL,JA,JA,IB)
 cc         if ((ifl.eq.2).and.(ja.eq.jb))  write(62,*) TMT(IFL,JA,JA,IB)
 
-            TMT(IFL,JA,JB,IB)=TMT(IFL,JA,JB,IB)*ci/kappa
+           TMT(IFL,JA,JB,IB)=TMT(IFL,JA,JB,IB)*ci/kappa
             
            ENDDO
            ENDDO
          ENDDO
+         write(*,*)'TMT(1,2,2,1)=',TMT(1,2,2,1)
+         write(*,*)'TMT(2,2,2,1)=',TMT(2,2,2,1)
 *
 cc      close(61)                   !Only for debugging
 cc      close(62)
 *<<<
-
-      ENDDO
-*
-*
+ 44   continue
+      ENDDO   !the loop over NBAS
+!
+! Determine the scalar structure constants 
+!
       call dlmset(lmax)
       call dlmsf2in3(lmax,nbas,kappa,ak,dlm) 
 *
-      do ifl=1,nf
+      do ifl=1,nf  !nf=1 for a simple lattice
 *                            
 * (1,2) phase factor for diamond lattice
 *
@@ -200,23 +245,27 @@ c      if (ifl.eq.2) cfac=exp(-ci*kappa*sqrt(6.d0)/4.d0)
 c      if (ifl.eq.3) cfac=exp(ci*kappa*sqrt(6.d0)/4.d0)
 *                                (1,2) phase factor for diamond lattice
 *
-      call blf2in3(lmax,xmat(1,1,ifl),dlm(1,ifl))
+      call blf2in3(lmax,xmat(1,1,ifl),dlm(1,ifl))     !XMAT=A_{LL'} assigned including XMAT(1,1)
 *
-      if (ifl.eq.1) then     !make g_{LL'} from A_{LL'}
+!make g_{LL'} from A_{LL'}
+!
+      if (ifl.eq.1) then     
        do j=1,nlb
         xmat(j,j,1)=xmat(j,j,1)+ci*kappa
        enddo
       end if
-*
-*                            !generate vector constants
-*
+!
+! Determine the vector structure constants from the scalar ones 
+!                        
       call GEN2IN3VEC(LMAX,XMAT(1,1,ifl),VEC(1,1,ifl))
       enddo
-*
+!
+! Determine secular matrix
+!
       CALL secularc(lmax,nbas,tmt,vec,ama)
-*
-* Secular matrix if formed. Make matrix inversion:
-*  
+!
+! Perform matrix inversion of the secular matrix 
+!
       CALL ZGE(AMA,INT,INMAX2,INMAXD,EMACH)   
 *
       ISIGN2=1  
@@ -231,6 +280,9 @@ c      if (ifl.eq.3) cfac=exp(ci*kappa*sqrt(6.d0)/4.d0)
       GK(3)=SIGN2*GKK(3,IG2)
   
       CALL PLW(KAPPA,GK,LMAX,AE,AH)  
+! THE EXPANSION COEFFICIENTS AE,AH OF AN INCIDENT ELECTROMAGNETIC 
+! PLANE WAVE ORDERED FROM (LM)=(00)=1, ETC. 
+! WITH AE(*,1) AND AH(*,1).EQUIV.0
 
       DO 30 K2=1,2                     !2nd loop over spherical coordinates
       IGK2=IGK2+1    

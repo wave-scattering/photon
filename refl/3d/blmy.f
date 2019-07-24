@@ -10,10 +10,10 @@ C           where the complex spherical harmonics are in
 C                   the Condon-Shortley convention.
 C                   (see results of testgaunt.f)
 C                   ============================== 
-C     FUNCTION BLMY  PROVIDES  THE  INTEGRAL  OF  THE  PRODUCT  OF THREE  
-C     SPHERICAL HARMONICS,EACH OF WHICH CAN BE EXPRESSED AS A PREFACTOR  
-C     TIMES  A  LEGENDRE  FUNCTION. THE  THREE  PREFACTORS  ARE  LUMPED  
-C     TOGETHER AS  FACTOR 'C'; AND   THE INTEGRAL OF THE THREE LEGENDRE  
+C     FUNCTION BLMY PROVIDES THE INTEGRAL OF THE PRODUCT OF THREE
+C     SPHERICAL HARMONICS, EACH OF WHICH CAN BE EXPRESSED AS A PREFACTOR
+C     TIMES A LEGENDRE FUNCTION. THE THREE PREFACTORS ARE LUMPED
+C     TOGETHER AS FACTOR 'C'; AND  THE INTEGRAL OF THE THREE LEGENDRE
 C     FUNCTIONS FOLLOWS GAUNT SUMMATION SCHEME SET OUT BY SLATER(ATOMIC  
 C     STRUCTURE, VOL1, 309,310  
 C     BLMY IS ZERO UNLESS 
@@ -21,7 +21,7 @@ C                       M1+M2=-M3
 C     AND 
 C                      |l_i-l_j| <= l_k <= l_i+l_j
 C
-C     FOR ALL PERMUTATIONS OF  l_1, l_2, and l_3
+C     FOR ALL PERMUTATIONS OF l_1, l_2, and l_3
 C-----------------------------------------------------------------------  
 C  
 C ..  PARAMETER STATEMENTS  ..  

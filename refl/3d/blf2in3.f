@@ -10,12 +10,13 @@ C   D_{\LD}=\SUM_{LL'} A_{LL'} j_l(\sg r)Y_L(R)j_{l'}(\sg r') Y_L^*(r')
 C
 C     WHERE R=r-r'. ONE HAS
 C
-C           A_{L1L2}=4*PI* \SUM_{L3}(-1)**((L1-L2-L3)/2)*
+C           XMAT=A_{L1L2}=4*PI* \SUM_{L3}(-1)**((L1-L2-L3)/2)*
 C                               <Y_{L2}Y_{L3}Y^*_{L1}>D_{L3}
 C
 C     BLMY(l1,m1,l2,m2,l3,m3,*) BELOW RETURNS  <Y_{L1}Y_{L2}Y_{L3}> 
 C
-C    CFAC is a phase factor for complex lattices
+C     CFAC is a phase factor for complex lattices
+!     XMAT is assigned including XMAT(1,1)
 C--------/---------/---------/---------/---------/---------/---------/-- 
       IMPLICIT NONE 
       INTEGER   LMAXD,LMAX1D,LMDL,NYLRD
@@ -97,9 +98,9 @@ C        IF (.NOT.M1M2M3) GOTO 20
 C  20  CONTINUE  
   30  CONTINUE 
 *
-        I1=L1*(L1+1)+M1+1
+        I1=L1*(L1+1)+M1+1  
         I2=L2*(L2+1)+M2+1
-         XMAT(I1,I2)=CFAC*CX
+         XMAT(I1,I2)=CFAC*CX     !assigned including XMAT(1,1)
 * for the use in crefl3d:
 c        XMAT(I2,I1)=CX
 *

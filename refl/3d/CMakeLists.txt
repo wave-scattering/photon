@@ -14,6 +14,10 @@ ENABLE_LANGUAGE(C)
 
 
 #SET (CMAKE_Fortran_FLAGS "-O3 -cpp -mtune=native -fopenmp")
+set(CMAKE_BUILD_TYPE Debug
+        CACHE STRING "Build type (Debug, Release)" FORCE)
+set(warn "-Wall -Wextra -Wimplicit-interface -fPIC")# -fmax-errors=1")
+set(CMAKE_Fortran_FLAGS_DEBUG   "${common} ${warn} -g -fbounds-check -fcheck-array-temporaries -fbacktrace")
 
 
 ADD_EXECUTABLE(${PROJECTNAME} "c1axsrefl3d.f"
@@ -34,7 +38,7 @@ ADD_EXECUTABLE(${PROJECTNAME} "c1axsrefl3d.f"
         "latgen2d.f"
         "../../3d/mediumn.f"
         "order2dl.f"
-        "pccslab.f"
+ #       "pccslab.f"
         "pccslabc.f"
         "../../3d/readmat.f"
         "secular.f"

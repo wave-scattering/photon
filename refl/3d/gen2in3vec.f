@@ -11,8 +11,8 @@ C
 C     TO BE USED WITH ROUTINE BLM WHICH GENERATES CLEBSH-GORDAN
 C                           COEFFICIENTS.
 C
-C     (Regarding the CPC 113 article, indices in BLM, CEVEN, CODDl
-C     m;l',m' should be interchanged in order to get the correct 
+C     (Regarding the CPC 113 article, indices in BLM, CEVEN, CODD
+C     l,m;l',m' should be interchanged in order to get the correct 
 C     expressions [see Stefanou and Modinos, JPC3, 8156-7 (1991)].)
 C
 C                         |  OMEGA1 | -OMEGA2 |
