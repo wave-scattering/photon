@@ -106,18 +106,14 @@ C
 *
 * AMA initialization:
       
-      do ja=1,inmax2
-        do jb=1,inmax2
-        ama(ja,jb)=czero
-        enddo
-      enddo
+      ama(:,:)=czero
 
 * BINDX initialization:
       ifl=1     
 *
       do j=1,nbas
         do i=1,nbas
-          if (i.eq.j) then
+          if (i==j) then
             bindx(i,j)=1
           else
             ifl=ifl+1

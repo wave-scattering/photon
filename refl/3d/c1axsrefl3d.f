@@ -237,7 +237,7 @@ c The coating layer to which material data are read in
 * test:  eps=15, r=0.4705
 *
 c sphere (core) dielectric constant  (depending whether ync is 'y' or 'n')   
-      PARAMETER (CCEPS=10.D0)
+      PARAMETER (CCEPS=2.D0)
 C >>>     SPHERE (OUTER SHELL SCATTERER) PERMITTIVITY                  <<<
 *  n(silica)=1.45  <--->    EPS(1)=2.1025D0
 *  n(ZnS)=2.       <--->    EPS(1)=4.D0
@@ -1400,18 +1400,18 @@ C
 !     &     ,MUSPH(1,1),KAPPA,AK,DL(1,1,1),DR(1,1,1),G,ELM,A0,EMACH,
 !     &     QIL,QIIL,QIIIL,QIVL)
 
-      CALL PCCSLABC(YNC,LMAX,IGMAX,NBAS,RAP,EPS1(1),EPSSPH(1,1)
-     &  ,MU1(1),MUSPH(1,1),KAPPA,AK,DL(1,1,1),DR(1,1,1)
-     &     ,G,A0,EMACH,QIL,QIIL,QIIIL,QIVL)
+      CALL PCCSLABC(YNC,LMAX,IGMAX,NBAS,A0,EMACH,RAP,EPS1(1)
+     &  ,EPSSPH(1,1),MU1(1),MUSPH(1,1),KAPPA,AK,DL(1,1,1),DR(1,1,1)
+     &     ,G,QIL,QIIL,QIIIL,QIVL)
 *
 *--------/---------/---------/---------/---------/---------/---------/--
       IF(NPLAN(1).GE.2) THEN  
       DO 13 IPL=2,NPLAN(1)  
       RAP=S(1,IPL)*KAPPA0/2.D0/PI  
 *
-      CALL PCCSLABC(YNC,LMAX,IGMAX,NBAS,RAP,EPS1(1),EPSSPH(1,IPL), 
-     &     MU1(1),MUSPH(1,IPL),KAPPA,AK,DL(1,1,IPL),DR(1,1,IPL),  
-     &           G,A0,EMACH,QIR,QIIR,QIIIR,QIVR) 
+      CALL PCCSLABC(YNC,LMAX,IGMAX,NBAS,A0,EMACH,RAP,EPS1(1)
+     &   ,EPSSPH(1,IPL), MU1(1),MUSPH(1,IPL),KAPPA,AK,DL(1,1,IPL)  
+     &   ,DR(1,1,IPL),G,QIR,QIIR,QIIIR,QIVR) 
 * 
       CALL PAIR(IGKMAX,QIL,QIIL,QIIIL,QIVL,QIR,QIIR,QIIIR,QIVR) 
    13 CONTINUE  
@@ -1458,11 +1458,10 @@ c     write(6,*) 'EPS1(ICOMP)-ELAST=', ABS(EPS1(ICOMP)-ELAST)
 *  of spheres cut by a plane and the remaining layer having
 *  regular spheres
 *
-*                 
-      CALL PCCSLABC(YNC,LMAX,IGMAX,NBAS,RAP,EPS1(ICOMP),EPSSPH(ICOMP,1)  
-     &          ,MU1(ICOMP),MUSPH(ICOMP,1),KAPPA,AK,DL(1,ICOMP,1),  
-     &           DR(1,ICOMP,1),G,A0,EMACH,QIR,QIIR,QIIIR,QIVR)
-
+*
+      CALL PCCSLABC(YNC,LMAX,IGMAX,NBAS,A0,EMACH,RAP,EPS1(ICOMP)
+     &   ,EPSSPH(ICOMP,IPL), MU1(ICOMP),MUSPH(ICOMP,IPL),KAPPA,AK
+     &  ,DL(1,ICOMP,IPL),DR(1,ICOMP,IPL),G,QIR,QIIR,QIIIR,QIVR) 
 * 
 *--------/---------/---------/---------/---------/---------/---------/--
       IF(NPLAN(ICOMP).GE.2) THEN
@@ -1477,13 +1476,13 @@ c     write(6,*) 'EPS1(ICOMP)-ELAST=', ABS(EPS1(ICOMP)-ELAST)
    
       DO 15 IPL=2,NPLAN(ICOMP)  
       RAP=S(ICOMP,IPL)*KAPPA0/2.D0/PI  
-*
-      CALL PCCSLABC(YNC,LMAX,IGMAX,NBAS,RAP,EPS1(ICOMP),  
-     &          EPSSPH(ICOMP,IPL),MU1(ICOMP),MUSPH(ICOMP,IPL),KAPPA,AK,  
-     &           DL(1,ICOMP,IPL),DR(1,ICOMP,IPL),G,A0,EMACH,  
-     &           QIR,QIIR,QIIIR,QIVR)
-*
+
+      CALL PCCSLABC(YNC,LMAX,IGMAX,NBAS,A0,EMACH,RAP,EPS1(ICOMP)
+     &   ,EPSSPH(ICOMP,IPL), MU1(ICOMP),MUSPH(ICOMP,IPL),KAPPA,AK
+     &  ,DL(1,ICOMP,IPL),DR(1,ICOMP,IPL),G,QIR,QIIR,QIIIR,QIVR) 
+
       CALL PAIR(IGKMAX,WIL,WIIL,WIIIL,WIVL,QIR,QIIR,QIIIR,QIVR) 
+
    15 CONTINUE  
            DO 18 IGK1=1,IGKMAX  
            DO 18 IGK2=1,IGKMAX  
@@ -1494,12 +1493,16 @@ c     write(6,*) 'EPS1(ICOMP)-ELAST=', ABS(EPS1(ICOMP)-ELAST)
    18        CONTINUE  
                   ENDIF  
       IF(NLAYER(ICOMP).GE.2) THEN  
-      DO 16 ILAYER=1,NLAYER(ICOMP)-1  
-      CALL PAIR(IGKMAX,QIR,QIIR,QIIIR,QIVR,QIR,QIIR,QIIIR,QIVR)  
+      DO 16 ILAYER=1,NLAYER(ICOMP)-1 
+ 
+      CALL PAIR(IGKMAX,QIR,QIIR,QIIIR,QIVR,QIR,QIIR,QIIIR,QIVR) 
+ 
    16 CONTINUE  
                    ENDIF  
                       ENDIF  
+
       CALL PAIR(IGKMAX,QIL,QIIL,QIIIL,QIVL,QIR,QIIR,QIIIR,QIVR)  
+
     4 CONTINUE  
                                                                    ENDIF  
       IF(KTYPE.LT.3) THEN  
@@ -1511,27 +1514,37 @@ C
              IF(NUNIT.EQ.1) GO TO 30 
            IF(ABS(MLAST-MFIRST).NE.0.D0.OR.ABS(ELAST-EFIRST).NE.0.D0) 
      &       STOP 'IMPROPER MATCHING OF SUCCESSIVE HOST MEDIA' 
-           DO 9 IU=1,NUNIT-1  
+           DO 9 IU=1,NUNIT-1 
+ 
              CALL PAIR(IGKMAX,QIL,QIIL,QIIIL,QIVL,QIL,QIIL,QIIIL,QIVL)   
+
     9        CONTINUE  
    30        CONTINUE  
              IF(KEMB.EQ.1) THEN 
-             CALL HOSLAB(IGMAX,KAPR,(KAPR+KAPOUT)/2.D0,KAPOUT,AK,G,VEC0,  
-     &                   VEC0,0.D0,QIR,QIIR,QIIIR,QIVR,EMACH)  
-           CALL PAIR(IGKMAX,QIL,QIIL,QIIIL,QIVL,QIR,QIIR,QIIIR,QIVR)  
+
+           CALL HOSLAB(IGMAX,KAPR,(KAPR+KAPOUT)/2.D0,KAPOUT,AK,G,VEC0,  
+     &                   VEC0,0.D0,QIR,QIIR,QIIIR,QIVR,EMACH)
+  
+           CALL PAIR(IGKMAX,QIL,QIIL,QIIIL,QIVL,QIR,QIIR,QIIIR,QIVR) 
+ 
            DO 11 IGK1=1,IGKMAX  
            DO 11 IGK2=1,IGKMAX  
            QIR  (IGK1,IGK2)=QIL  (IGK1,IGK2)  
            QIIR (IGK1,IGK2)=QIIL (IGK1,IGK2)  
            QIIIR(IGK1,IGK2)=QIIIL(IGK1,IGK2)  
            QIVR (IGK1,IGK2)=QIVL (IGK1,IGK2)  
-   11        CONTINUE  
+   11        CONTINUE
+  
              CALL HOSLAB(IGMAX,KAPIN,(KAPL+KAPIN)/2.D0,KAPL,AK,G,VEC0,  
      &                   VEC0,0.D0,QIL,QIIL,QIIIL,QIVL,EMACH)  
+
            CALL PAIR(IGKMAX,QIL,QIIL,QIIIL,QIVL,QIR,QIIR,QIIIR,QIVR)  
+
                                 ENDIF 
-             CALL SCAT(IGMAX,ZVAL,AK,G,DBLE(KAPIN),DBLE(KAPOUT),
+
+           CALL SCAT(IGMAX,ZVAL,AK,G,DBLE(KAPIN),DBLE(KAPOUT),
      &                 EINCID,QIL,QIIIL)  
+
                      ELSE  
 C  
 C****** ALTERNATIVELY, CALCULATE COMPLEX PHOTONIC BAND STRUCTURE ******  
@@ -3819,8 +3832,8 @@ C
 C  
 C ..  ARRAY ARGUMENTS  ..  
 C  
-      INTEGER    INT(NC)  
-      COMPLEX*16 A(NC,NC)  
+      INTEGER, intent(out) ::    INT(NC)    !INT(N) is not assigned
+      COMPLEX*16, intent(inout) :: A(NC,NC)
 C  
 C ..  LOCAL SCALARS  ..  
 C  
@@ -3867,13 +3880,14 @@ C     ------------------------------------------------------------------
 C  
 C ..  SCALAR ARGUMENTS  ..  
 C  
-      INTEGER N,NC  
-      REAL*8 EMACH  
+      INTEGER, intent(in) ::   N,NC
+      REAL*8, intent(in) :: EMACH
 C  
 C ..  ARRAY ARGUMENTS  ..  
 C  
-      INTEGER    INT(NC)  
-      COMPLEX*16 A(NC,NC),X(NC)  
+      INTEGER, intent(in) ::    INT(NC)
+      COMPLEX*16, intent(inout) :: A(NC,NC)
+      COMPLEX*16, intent(out) :: X(NC)
 C  
 C ..  LOCAL SCALARS  ..  
 C  

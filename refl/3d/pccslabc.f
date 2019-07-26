@@ -1,5 +1,5 @@
-      SUBROUTINE PCCSLABC(YNC,LMAX,IGMAX,NBAS,RAP,EPSMED,EPSSPH,  
-     &       MUMED,MUSPH,KAPPA,AK,DL,DR,G,A0,EMACH,QI,QII,QIII,QIV)  
+      SUBROUTINE PCCSLABC(YNC,LMAX,IGMAX,NBAS,A0,EMACH,RAP,EPSMED,  
+     &       EPSSPH,MUMED,MUSPH,KAPPA,AK,DL,DR,G,QI,QII,QIII,QIV)  
 
 C Warning in module PCCSLABC in file pccslabc.f: Variables declared but never
 C referenced:
@@ -50,7 +50,7 @@ C     RAP=S(1,1)*KAPPA0/2.D0/PI     !=rmuf*ALPHA/LAMBDA =rsnm/LAMBDA
 C  
 C ..  PARAMETER STATEMENTS ..  
 C  
-      character*1 ync
+      character*1, intent(in) :: ync
       INTEGER   LMAXD,LMAX1D,LMTD,IGD,IGKD,NCMB,NFM,LMVT,LM1SQD,INMAXD,
      1          NYLRD,NDLMM
       PARAMETER (LMAXD=8,LMAX1D=LMAXD+1,LMTD=LMAX1D*LMAX1D-1)
@@ -64,16 +64,18 @@ C
 C  
 C ..  SCALAR ARGUMENTS ..  
 C  
-      INTEGER    LMAX,IGMAX,NBAS
-      REAL*8     A0,EMACH   
-      COMPLEX*16 EPSMED,EPSSPH,MUMED,MUSPH,KAPPA,RAP,CRAP  
+      INTEGER, intent(in) :: LMAX,IGMAX
+      INTEGER NBAS
+      REAL*8, intent(in) :: A0,EMACH   
+      COMPLEX*16, intent(in) :: EPSMED,EPSSPH,MUMED,MUSPH,KAPPA,RAP
+      COMPLEX*16  CRAP  
   
 C  
 C ..  ARRAY ARGUMENTS ..  
 C  
-      REAL*8     AK(2),DL(3),DR(3),G(2,IGD)  
-      COMPLEX*16 QI(IGKD,IGKD),QII(IGKD,IGKD),QIII(IGKD,IGKD)  
-      COMPLEX*16 QIV(IGKD,IGKD)  
+      REAL*8, intent(in) ::  AK(2),DL(3),DR(3),G(2,IGD)  
+      COMPLEX*16, intent(out) :: QI(IGKD,IGKD),QII(IGKD,IGKD)  
+      COMPLEX*16, intent(out) :: QIII(IGKD,IGKD),QIV(IGKD,IGKD)  
 C  
 C ..  LOCAL SCALARS  ..  
 C  
@@ -100,7 +102,8 @@ C
       COMPLEX*16 AMA(INMAXD,INMAXD)
 C 
       common/shfac11/ cfac 
-      common/topccslab/ iplp 
+      common/topccslab/ iplp   !specifies the number of structurally different
+                               !periodic layers
 C 
 C ..  INTRINSIC FUNCTIONS ..  
 C  
@@ -132,12 +135,12 @@ C
 *
 * Other local constants:
 *  
-      IGKMAX=2*IGMAX  
-      LMAX1=LMAX+1 
-      NLB=LMAX1*LMAX1
-      LMTOT=NLB-1   
-      inmax2=2*nbas*LMTOT   
-      NF=NBAS*NBAS-NBAS+1     !different possible pairing in complex lattice; NBAS=NF=1 for simple lattice
+      IGKMAX=2*IGMAX          !IGKD
+      LMAX1=LMAX+1            !LMAX1D
+      NLB=LMAX1*LMAX1         !NYLRD
+      LMTOT=NLB-1             !LMTD
+      inmax2=2*nbas*LMTOT     !secular matrix dimension
+      NF=NBAS*NBAS-NBAS+1     !different possible pairings in complex lattice; NBAS=NF=1 for simple lattice
 *
       DO 10 IG1=1,IGMAX  
       GKK(1,IG1)=DCMPLX((AK(1)+G(1,IG1)),0.D0)  
@@ -151,9 +154,11 @@ C
 cc      OPEN(61,FILE='tmteediag.dat')
 cc      OPEN(62,FILE='tmtmmdiag.dat')
 *
-      DO IB=1,NBAS  ! Loop over different scattering centers
+      TMT(:,:,:,:)=czero
 
-      go to 33
+      DO IB=1,NBAS  ! Loop over different scattering centers
+      
+!      go to 33
 cx      if (ib.eq.1)
       CALL TMTRXN(YNC,LMAX1,RAP,EPSSPH,EPSMED,MUMED,MUSPH,TE,TH)
 C ==========
@@ -166,7 +171,7 @@ C     Therefore, for a given LMAX, TH and TE are produced up to
 C     LMAX1D here!!!
 !     TH(1) and TE(1) are not assigned
 C ==========
-            TMT(:,:,:,:)=czero
+
             II=1
             DO JB=2,LMAX+1
             ja=jb-1        !now physical l
@@ -187,10 +192,10 @@ C ==========
         if (ii>lmtd+1) write(*,*) 'ii>lmtd+1 in pcclabc!'
 cx      if (ib.gt.1)
 *
-!      go to 44
+      go to 44
  33   continue
 
-      CALL TMTAXSP(LMAX,CRAP,EPSSPH,EPSMED,TMT(1,1,1,ib))
+!      CALL TMTAXSP(LMAX,CRAP,EPSSPH,EPSMED,TMT(1,1,1,ib))
 *
 C--------/---------/---------/---------/---------/---------/---------/--
 C
@@ -235,7 +240,7 @@ cc      close(62)
       call dlmset(lmax)
       call dlmsf2in3(lmax,nbas,kappa,ak,dlm) 
 *
-      do ifl=1,nf  !nf=1 for a simple lattice
+      do ifl=1,nf  !different possible pairings in complex lattice; nf=1 for a simple lattice
 *                            
 * (1,2) phase factor for diamond lattice
 *
@@ -258,9 +263,12 @@ c      if (ifl.eq.3) cfac=exp(ci*kappa*sqrt(6.d0)/4.d0)
 ! Determine the vector structure constants from the scalar ones 
 !                        
       call GEN2IN3VEC(LMAX,XMAT(1,1,ifl),VEC(1,1,ifl))
-      enddo
+
+      enddo    !ifl
 !
-! Determine secular matrix
+!===========================================================
+!
+! Determine the resulting secular matrix
 !
       CALL secularc(lmax,nbas,tmt,vec,ama)
 !
@@ -280,6 +288,7 @@ c      if (ifl.eq.3) cfac=exp(ci*kappa*sqrt(6.d0)/4.d0)
       GK(3)=SIGN2*GKK(3,IG2)
   
       CALL PLW(KAPPA,GK,LMAX,AE,AH)  
+
 ! THE EXPANSION COEFFICIENTS AE,AH OF AN INCIDENT ELECTROMAGNETIC 
 ! PLANE WAVE ORDERED FROM (LM)=(00)=1, ETC. 
 ! WITH AE(*,1) AND AH(*,1).EQUIV.0
@@ -305,7 +314,6 @@ c      if (ifl.eq.3) cfac=exp(ci*kappa*sqrt(6.d0)/4.d0)
            BMEL(II+(2*IB-1)*LMTOT)=CZERO 
          enddo
       endif       
-  
 
 * >>> matrix multiplication:
       
@@ -319,15 +327,12 @@ c      if (ifl.eq.3) cfac=exp(ci*kappa*sqrt(6.d0)/4.d0)
      &      -ci*kappa*TMT(4,II,IIP,1)*AH(K2,IIP+1) 
         BMEL(II+LMTOT)=BMEL(II+LMTOT)
      &      -ci*kappa*TMT(3,II,IIP,1)*AE(K2,IIP+1)
-     &      -ci*kappa*TMT(2,II,IIP,1)*AH(K2,IIP+1)  
-
-* <<< 
-
+     &      -ci*kappa*TMT(2,II,IIP,1)*AH(K2,IIP+1)
+* <<<
 C     ------------------------------------------------------------------   
       if (nbas.ge.2) then
       cfac=cone            ! exp(ci*gk(3)*sqrt(6.d0)/4.d0)
 
-        
       DO IB=2,NBAS 
         BMEL(II+2*(IB-1)*LMTOT)=BMEL(II+2*(IB-1)*LMTOT)
      &      -ci*kappa*TMT(1,II,IIP,IB)*AE(K2,IIP+1)
@@ -346,6 +351,8 @@ C     ------------------------------------------------------------------
       CALL ZSU(AMA,INT,BMEL,INMAX2,INMAXD,EMACH) 
 cs      call gzbsvd3d(INMAX2,INMAXD,AMA,BMEL,EMACH)  
 * 
+! BMEL on the output stores AMA**(-1)*BMEL from the input
+
       DO 40 ISIGN1=1,2  
       SIGN1=3.D0-2.D0*ISIGN1  
       IGK1=0  
@@ -376,9 +383,9 @@ C
       LAME(K1)=LAME(K1)+DLME(K1,II+1)*BMEL(II+2*(IB-1)*LMTOT)  
       LAMH(K1)=LAMH(K1)+DLMH(K1,II+1)*BMEL(II+(2*IB-1)*LMTOT)  
  
-   60 CONTINUE  
+   60 CONTINUE     !LM
 
-   50 CONTINUE  
+   50 CONTINUE     !K1
 *
 *    Q-MATRICES:
 *
@@ -392,8 +399,10 @@ C
    70 CONTINUE 
 * 
    90 CONTINUE                          !sum over IG1
-   40 CONTINUE                          !sum over  ISIGN1 
-   30 CONTINUE                          !2nd loop over spherical coordinates       
+   40 CONTINUE                          !sum over ISIGN1
+
+   30 CONTINUE                          !K2 - 2nd loop over spherical coordinates  
+     
    80 CONTINUE                          !sum over IG2 
 * 
                     IGK2=0  

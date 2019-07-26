@@ -1,6 +1,7 @@
       REAL*8 FUNCTION BLMY(L1,M1,L2,M2,L3,M3,LMAX)  
       IMPLICIT NONE 
 C----------------------------------------------------------------------- 
+!     called by blf2in3.f
 C                ===================================
 C                   This subroutine calculates
 C
@@ -42,7 +43,7 @@ C
 C  
 C ..  LOCAL ARRAYS  ..  
 C  
-      REAL*8  FAC(LMAX8D)  
+      REAL*8 FAC(LMAX8D)  
 C  
 C ..  DATA STATEMENTS  ..  
 C  
@@ -107,7 +108,7 @@ C
       AD=FAC(IA3+1)*FAC(IA6+1)*FAC(IA7+1)*FAC(IA8+1)*FAC(IA9+1)  
       A=AN/AD  
 C  
-C     CALCULATION OF SUM 'B' 
+C     CALCULATION OF THE SUM 'B' 
 C  
       IB1=NL1+NM1  
       IB2=NL2+NL3-NM1  

@@ -4,7 +4,7 @@ C >>> LMAX,XMAT
 C <<< XXMAT
 C =================
 C            GIVEN THE SCALAR STRUCTURE CONSTANTS MATRIX
-C                                XMAT,
+C                                XMAT
 C     THIS SUBROUTINE CONSTRUCTS THE VECTOR STRUCTURE CONSTANTS MATRIX
 C                                XXMAT  
 C
@@ -34,11 +34,12 @@ C
 C  
 C ..  SCALAR ARGUMENTS ..  
 C  
-      INTEGER LMAX  
+      INTEGER, intent(in) :: LMAX  
 C  
 C ..  ARRAY ARGUMENTS ..  
 C  
-      COMPLEX*16 XMAT(NYLRD,NYLRD),XXMAT(LMVT,LMVT) 
+      COMPLEX*16, intent(in) :: XMAT(NYLRD,NYLRD)
+      COMPLEX*16, intent(out) :: XXMAT(LMVT,LMVT) 
 C  
 C ..  LOCAL SCALARS ..  
 C  

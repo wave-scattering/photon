@@ -1,6 +1,7 @@
       REAL*8 FUNCTION BLM(L1,M1,L2,M2,L3,M3,LMAX)  
       IMPLICIT NONE 
 C----------------------------------------------------------------------- 
+!     called by gen2in3vec.f
 C                ===================================
 C                   This subroutine calculates
 C
@@ -16,12 +17,12 @@ C     TIMES  A  LEGENDRE  FUNCTION. THE  THREE  PREFACTORS  ARE  LUMPED
 C     TOGETHER AS  FACTOR 'C'; AND   THE INTEGRAL OF THE THREE LEGENDRE  
 C     FUNCTIONS FOLLOWS GAUNT SUMMATION SCHEME SET OUT BY SLATER(ATOMIC  
 C     STRUCTURE, VOL1, 309,310  
-C     BLMY IS ZERO UNLESS 
+C     BLM IS ZERO UNLESS 
 C                       M1+M2=-M3 
 C     AND 
 C                      |l_i-l_j| <= l_k <= l_i+l_j
 C 
-C     FOR ALL PERMUTATIONS OF  l_1, l_2, and l_3
+C     FOR ALL PERMUTATIONS OF l_1, l_2, and l_3
 C-----------------------------------------------------------------------  
 C  
 C ..  PARAMETER STATEMENTS  ..  
@@ -42,11 +43,11 @@ C
 C  
 C ..  LOCAL ARRAYS  ..  
 C  
-      REAL*8  FAC(LMAX8D)  
+      REAL*8 FAC(LMAX8D)  
 C  
 C ..  DATA STATEMENTS  ..  
 C  
-      DATA PI/3.14159265358979D0/  
+      DATA PI/3.14159265358979D0/
 C-----------------------------------------------------------------------  
       FAC(1)=1.0D0  
       NN=4*LMAX+1  
@@ -107,7 +108,7 @@ C
       AD=FAC(IA3+1)*FAC(IA6+1)*FAC(IA7+1)*FAC(IA8+1)*FAC(IA9+1)  
       A=AN/AD  
 C  
-C     CALCULATION OF SUM 'B' 
+C     CALCULATION OF THE SUM 'B' 
 C  
       IB1=NL1+NM1  
       IB2=NL2+NL3-NM1  
