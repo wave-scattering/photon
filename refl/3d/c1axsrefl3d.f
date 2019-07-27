@@ -2993,7 +2993,7 @@ C >>> YNC,LMAX=LMAX1D,RAP,CSPHEPS,CMEDEPS,CMEDMU,CSPHMU
 C <<< TE,TH
 C ==========
 C     TH     : -i*\sg t_{M}    
-C     TH     : -i*\sg t_{E}    = i*sin(eta)*exp(eta), eta ... phase-shift
+C     TH     : -i*\sg t_{E}    = i*sin(eta)*exp(i*eta), eta ... phase-shift
 C !!! Note the following ordering: 
 C !!! TH(L) corresponds to the T matrix component with angular-momentum L-1 !!! 
 C !!!                [The same for TE(L)]
