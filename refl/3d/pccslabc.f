@@ -128,7 +128,7 @@ C
       if(iplp.eq.1) then
         nbas=1
         crap=rap
-      else if(iplp.eq.2) then
+      else if(iplp.eq.2) then   !TODO: dangerous-may overwrite nbas
         nbas=2
         crap=110.d0*rap/203.d0   !gamma factor
       end if

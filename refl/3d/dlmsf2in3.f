@@ -113,6 +113,7 @@ cx     1 ,isym(laytm),nsk(npm),nsr(npm)
      1 pos(3,natlm,laytm),denom1(lmxm3),fctrl(0:4*lmaxd),rv(2,nrmax),
      2 kv(2,nkmax),xtol(ndlmm,nfm),xxtol(ndlmm,nfm)
 
+      complex*16 czero,ci
       complex*16 dlm(ndlmm,nfm),dlm1(ndlmm,nfm),dlm2(ndlmm,nfm),
      1 gamfn(0:lmaxd),delta(0:2*lmaxd,nfm),phim(-2*lmaxd:2*lmaxd), 
      1 cerf,pref1(ndlmm),gkpbka(0:4*lmaxd),kazbka(-1:4*lmaxd-1), 
@@ -139,7 +140,7 @@ C ..  DATA STATEMENTS  ..
 C  
       DATA PI/3.14159265358979D0/,EMACH/1.D-12/
 c,DTHR/1.D-6/
-*** CZERO/(0.D0,0.D0)/,CI/(0.D0,1.D0)/,
+      DATA CZERO/(0.D0,0.D0)/,CI/(0.D0,1.D0)/
 
       ynstab=.true.
 
@@ -186,20 +187,23 @@ c        pos(3,3,1)=-1.d0/(2.d0*sqrt(3.d0))
 * and the other components of pos(*,2,*) are zero since the 2nd
 * fcc is shifted along the stacking direction!
 *
+! offset - nonzero only for complex lattices
+
       tau(1)=0.d0
       tau(2)=0.d0
 *
-      do i=1,2
+      do i=1,2    !basis vectors of the direct and dual lattices
        arv(i,1)=ar1(i)
        arv(i,2)=ar2(i)
        bv(i,1)=b1(i)
        bv(i,2)=b2(i)
       enddo
 *
+! generate the direct and dual lattices
+
       call latgen2d(arv,rv,nr,nrmax,tau)
       call latgen2d(bv,kv,nk,nkmax,tau)
 *
-C***********************************************************************
 C***********************************************************************
 C
 C                   FROM LEED'S DLMNEW OF PENDRY
@@ -217,17 +221,22 @@ cx      else
 * Array initialization to zero - when zeroing a complex matrix with
 * a real subroutine it used to be factor 2 here:
 *
-      call mzero (dlm,ndlmm*nfm)
-      call mzero (dlm1,ndlmm*nfm)
-      call mzero (dlm2,ndlmm*nfm)
+      dlm(:,:)=czero
+      dlm1(:,:)=czero
+      dlm2(:,:)=czero
+! old
+!      call mzero (dlm,ndlmm*nfm)
+!      call mzero (dlm1,ndlmm*nfm)
+!      call mzero (dlm2,ndlmm*nfm)
 *
 * Initialization:
       if ((yntest.eq.'y').or.(yntest.eq.'Y')) then
-       do lm=1,ndlm
-         do ifl=1,nf
-           xtol(lm,ifl)=10.d0*tol
-       enddo
-       enddo
+      xtol(:,:)=10.d0*tol
+!       do lm=1,ndlm
+!         do ifl=1,nf
+!           xtol(lm,ifl)=10.d0*tol
+!       enddo
+!       enddo
       end if
 *
 c                                                                           
