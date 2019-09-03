@@ -13,12 +13,16 @@ C     LMAX        : THE ACTUAL CUTOFF IN SPHERICAL WAVES EXPANSIONS
 C     AK(1), AK(2): THE X  AND Y COMPONENTS OF THE  MOMENTUM PARALLEL 
 C                   TO THE SURFACE, REDUCED TO THE 1ST BRILLOUIN ZONE
 C                   
-!     EMACH/1.D-8/ IS AN OLD MACHINE ACCURACY  
+!     EMACH/1.D-8/ IS AN OLD MACHINE ACCURACY - TODO
 !
 !         
 !     DENOM(K)=1.0D0/(FAC(I1)*FAC(I2)*FAC(I3)) 
 !                where I1=I, I2=NN-I+1, I3=NN+M-I 
 !     not the same as denom1(iden) in dlmsf2in3!!!
+!
+!     Following Kambi, the Faddeeva complex error function is used
+!     to generate the values of incomplete gamma function of complex
+!     argument in DL1 contribution
 C--------/---------/---------/---------/---------/---------/---------/--  
       IMPLICIT NONE 
 C  
@@ -79,7 +83,7 @@ C
 C  
 C ..  EXTERNAL FUNCTIONS  ..  
 C  
-      EXTERNAL CERF  
+      EXTERNAL CERF   !the Faddeeva complex error function
 C  
 C ..  DATA STATEMENTS  ..  
 C  
@@ -152,8 +156,8 @@ C                             DLM1
 C     DLM1, THE  SUM  OVER  RECIPROCAL   LATTICE  VECTORS, IS  
 C     CALCULATED FIRST. 
 !
-!     THE PREFACTOR PREF IS  TABULATED  FOR EVEN  
-C     VALUES OF L+|M|, THUS LM=(00),(11),(2 0),(22),(2*LMAX,2*LMAX)
+!     THE PREFACTOR PREF IS TABULATED  FOR EVEN
+C     VALUES OF L+|M|, THUS LM=(00),(11),(20),(22),(2*LMAX,2*LMAX)
 !  
 C     THE  FACTORIAL FACTOR F1 IS TABULATED IN DENOM, FOR ALL VALUES OF N=0,(L-|M|)/2  
 C  
@@ -196,9 +200,9 @@ C
 
   8   CONTINUE 
 C
-C     THE  RECIPROCAL  LATTICE IS  DEFINED BY  B1, B2. THE  SUMMATION  
-C     BEGINS WITH THE ORIGIN POINT OF THE LATTICE, AND  CONTINUES IN  
-C     STEPS OF 8*N1 POINTS, EACH  STEP INVOLVING THE  PERIMETER OF A  
+C     THE  RECIPROCAL LATTICE IS  DEFINED BY B1, B2. THE  SUMMATION
+C     BEGINS WITH THE ORIGIN POINT OF THE LATTICE, AND CONTINUES IN
+C     STEPS OF 8*N1 POINTS, EACH  STEP INVOLVING THE PERIMETER OF A
 C     PARALLELOGRAM OF LATTICE POINTS ABOUT THE ORIGIN, OF SIDE 2*N1+1  
 C     EACH STEP BEGINS AT LABEL 9
 !     AKPT=THE CURRENT LATTICE VECTOR IN THE SUM  
@@ -208,13 +212,14 @@ C
 
 ! Setting counter N1 for the reciprocal lattice summation:
       N1=-1  
-   9  N1=N1+1       !loop counter
+   9  N1=N1+1          !loop counter beginning from N1=0
  
-      NA=N1+N1+II  
-      AN1=DBLE(N1)  
-      AN2=-AN1-1.0D0  
+      NA=N1+N1+II      !beginning from NA=1
+      AN1=DBLE(N1)     !beginning from AN1=0
+      AN2=-AN1-1.0D0   !beginning from AN2=-1
+
       DO 22 I1=1,NA  
-      AN2=AN2+1.0D0 
+      AN2=AN2+1.0D0    !beginning from AN2=0
  
       DO 21 I2=1,4  
 C     WRITE(16,307) I1,I2  
@@ -237,10 +242,12 @@ C     INITIALISED AS BELOW. AND USED AS TABLES:
 !     XPM(M) CONTAINS VALUES OF XPK**|M|  
 !     AGK(I) CONTAINS VALUES OF (AC/KAPPA)**I  
 !     GKN(N) CONTAINS VALUES OF (GP/KAPPA)**(2*N-1)*GAM(N,Z)  
-!     WHERE L=0,2*LMAX;M=-L,L;N=0,(L-|M|)/2;I=L-2*N  
+!     WHERE L=0,2*LMAX;M=-L,L;N=0,(L-|M|)/2;I=L-2*N
+!
 !     GAM IS THE INCOMPLETE GAMMA FUNCTION, WHICH IS CALCULATED BY  
 !     RECURRENCE  FROM  THE VALUE  FOR N=0, WHICH  IN TURN CAN  BE  
-!     EXPRESSED IN TERMS OF THE COMPLEX ERROR FUNCTION CERF  
+!     EXPRESSED IN TERMS OF the Faddeeva complex error function
+!     provided by CERF routine
 !     AC=MOD(AKPT). NOTE SPECIAL ACTION IF AC=0  
  
       ACSQ=AKPT(1)*AKPT(1)+AKPT(2)*AKPT(2)  !K_\parallel^2
@@ -549,125 +556,162 @@ C=======================================================================
       FUNCTION CERF(Z,EMACH)  
       IMPLICIT NONE 
 C     ------------------------------------------------------------------  
-C     CERF, GIVEN COMPLEX ARGUMENT Z, PROVIDES THE COMPLEX ERROR FUNCTION: 
-C     W(Z)=EXP(-Z**2)*(1.0-ERF(-I*Z))  
-C     THE  EVALUATION  ALWAYS  TAKES   PLACE  IN  THE  FIRST   QUADRANT.  
-C     ONE  OF  THREE METHODS  IS  EXPLOYED  DEPENDING ON THE SIZE OF THE 
-C     ARGUMENT (A POWER SERIES, A RECURRENCE BASED ON CONTINUED FRACTIONS  
-C     THEORY, OR AN ASYMPTOTIC SERIES). EMACH IS THE MACHINE ACCURACY  
-C     ------------------------------------------------------------------  
-C  
-C ..  SCALAR ARGUMENTS  ..  
-C  
-      REAL*8     EMACH  
-      COMPLEX*16 Z  
-C  
-C ..  LOCAL SCALARS  ..  
-C  
-      INTEGER    NN,N 
-      REAL*8     ABSZ,ABTERM,API,EPS,FACT,FACTD,FACTN,PI  
-      REAL*8     Q,RTPI,TEST,X,Y,YY  
-      COMPLEX*16 ZZ,CONE,CI,CZERO,SUM,ZZS,XZZS,CER,CERF   
-      COMPLEX*16 H1,H2,H3,U1,U2,U3,TERM1,TERM2  
-C  
-C ..  INTRINSIC FUNCTIONS  ..  
-C  
-*      INTRINSIC DCMPLX,EXP,DCONJG  
-C  
-C ..  DATA STATEMENTS  ..  
-C  
-      DATA PI/3.14159265358979D0/  
-      DATA CONE/(1.D0,0.D0)/,CI/(0.D0,1.D0)/,CZERO/(0.D0,0.D0)/  
-C     ------------------------------------------------------------------  
-C  
-      EPS=5.0D0*EMACH  
-      API=1.0D0/PI  
-      IF(ABS(Z))2,1,2  
-   1  CERF=CONE  
-      GOTO 29  
-C  
-C     THE ARGUMENT IS TRANSLATED TO THE FIRST QUADRANT FROM  
-C     THE NN_TH QUADRANT, BEFORE THE METHOD FOR THE FUNCTION  
-C     EVALUATION IS CHOSEN  
-C  
-   2  X=DBLE(Z)  
-      Y=DIMAG(Z)  
-      YY=Y  
-      IF(Y)6,3,3  
-   3  IF(X)5,4,4  
-   4  ZZ=Z  
-      NN=1  
-      GOTO 9  
-   5  ZZ=DCMPLX(-X,Y)  
-      NN=2  
-      GOTO 9  
-   6  YY=-Y  
-      IF(X)7,8,8  
-   7  ZZ=-Z  
-      NN=3  
-      GOTO 9  
-   8  ZZ=DCMPLX(X,-Y)  
-      NN=4  
-   9  ZZS=ZZ*ZZ  
-      XZZS=EXP(-ZZS)  
-      ABSZ=ABS(ZZ)  
-      IF(ABSZ-10.0D0)10,10,23  
-  10  IF(YY-1.0D0)11,12,12  
-  11  IF(ABSZ-4.0D0)13,18,18  
-  12  IF(ABSZ-1.0D0)13,18,18  
-C  
-C     POWER SERIES(SEE ABRAMOWITZ AND STEGUN HANDBOOK OF  
-C     MATHEMATICAL FUNCTIONS, P297)  
-C  
-  13  Q=1.0D0  
-      FACTN=-1.0D0  
-      FACTD=1.0D0  
-      TERM1=ZZ  
-      SUM=ZZ  
-  14  DO 15 N=1,5  
-      FACTN=FACTN+2.0D0  
-      FACTD=FACTD+2.0D0  
-      FACT=FACTN/(Q*FACTD)  
-      TERM1=FACT*ZZS*TERM1  
-      SUM=SUM+TERM1  
-  15  Q=Q+1.0D0  
-      ABTERM=ABS(TERM1)  
-      IF(ABTERM-EPS)17,16,16  
-  16  IF(Q-100.0D0)14,17,17  
-  17  FACT=2.0D0*SQRT(API)  
-      SUM=FACT*CI*SUM  
-      CER=XZZS+XZZS*SUM  
-      GOTO 24  
-C  
-C     CONTINUED FRACTION THEORY(W(Z) IS RELATED TO THE LIMITING  
-C     VALUE OF U(N,Z)/H(N,Z), WHERE U AND H OBEY THE SAME  
-C     RECURRENCE RELATION IN N. SEE FADDEEVA AND TERENTIEV  
-C     (TABLES OF VALUES OF W(Z) FOR COMPLEX ARGUMENTS, PERGAMON  
-C       N.Y. 1961)  
-C  
-  18  TERM2=DCMPLX(1.D6,0.0D0)  
-      Q=1.0D0  
-      H1=CONE  
-      H2=2.0D0*ZZ  
-      U1=CZERO  
-      RTPI=2.0D0*SQRT(PI)  
-      U2=DCMPLX(RTPI,0.0D0)  
-  19  TERM1=TERM2  
-      DO 20 N=1,5  
-      H3=H2*ZZ-Q*H1  
-      U3=U2*ZZ-Q*U1  
-      H1=H2  
-      H2=2.0D0*H3  
-      U1=U2  
-      U2=2.0D0*U3  
-  20  Q=Q+1.0D0  
-      TERM2=U3/H3  
-      TEST=ABS((TERM2-TERM1)/TERM1)  
-      IF(TEST-EPS)22,21,21  
-  21  IF(Q-60.0D0)19,19,13  
-  22  CER=API*CI*TERM2  
-      GOTO 24  
-C  
+C     GIVEN COMPLEX ARGUMENT Z, PROVIDES THE FADDEEVA
+C     COMPLEX ERROR FUNCTION (Eq. (7.2.3) of \ct{Ol}):
+!
+!     W(Z)=EXP(-Z**2)*(1.0-ERF(-I*Z))  ... 7.1.3 AS; 7.2.3 Ol
+!
+C     THE EVALUATION ALWAYS TAKES  PLACE IN THE FIRST QUADRANT.
+C     ONE OF THREE METHODS IS EXPLOYED DEPENDING ON THE SIZE OF THE
+C     ARGUMENT (A POWER SERIES,A RECURRENCE BASED ON CONTINUED FRACTIONS
+C     THEORY, OR AN ASYMPTOTIC SERIES).
+!
+!     EMACH IS THE OLD MACHINE ACCURACY - TODO
+!
+!     THE ARGUMENT IS TRANSLATED TO THE FIRST QUADRANT FROM
+!     THE NN_TH QUADRANT, BEFORE THE METHOD FOR THE FUNCTION
+!     EVALUATION IS CHOSEN
+!     SYMMETRY RELATIONS ARE NOW USED TO TRANSFORM THE FUNCTION
+!     BACK TO QUADRANT NN
+!
+!     AS = ABRAMOWITZ AND STEGUN HANDBOOK OF MATHEMATICAL FUNCTIONS
+!     Ol = Olver NIST HANDBOOK OF MATHEMATICAL FUNCTIONS at https://dlmf.nist.gov
+C     ------------------------------------------------------------------
+C
+C ..  SCALAR ARGUMENTS  ..
+C
+      REAL*8, intent(in) :: EMACH
+      COMPLEX*16, intent(in) :: Z
+C
+C ..  LOCAL SCALARS  ..
+C
+      INTEGER    NN,N
+      REAL*8     ABSZ,ABTERM,API,EPS,FACT,FACTD,FACTN,PI
+      REAL*8     Q,RTPI,TEST,X,Y,YY
+      COMPLEX*16 ZZ,CONE,CI,CZERO,SUM,ZZS,XZZS,CER,CERF
+      COMPLEX*16 H1,H2,H3,U1,U2,U3,TERM1,TERM2
+C
+C ..  INTRINSIC FUNCTIONS  ..
+C
+*     INTRINSIC DCMPLX,EXP,DCONJG
+C
+C ..  DATA STATEMENTS  ..
+C
+      DATA PI/3.14159265358979D0/
+      DATA CONE/(1.D0,0.D0)/,CI/(0.D0,1.D0)/,CZERO/(0.D0,0.D0)/
+C     ------------------------------------------------------------------
+C
+      EPS=5.0D0*EMACH
+      API=1.0D0/PI
+
+! the Faddeeva complex error function part:
+
+      IF(ABS(Z))2,1,2
+   1  CERF=CONE         !special value for z==0
+      GOTO 29
+
+!     Herein below z/=0
+!     THE ARGUMENT Z/=0 IS TRANSLATED FROM THE NN_TH QUADRANT INTO ZZ
+!     IN THE FIRST QUADRANT, BEFORE THE METHOD FOR THE
+!     Faddeeva complex error function EVALUATION IS CHOSEN
+C
+   2  X=DBLE(Z)
+      Y=DIMAG(Z)
+      YY=Y
+      IF(Y)6,3,3
+   3  IF(X)5,4,4
+   4  ZZ=Z
+      NN=1
+      GOTO 9
+   5  ZZ=DCMPLX(-X,Y)
+      NN=2
+      GOTO 9
+   6  YY=-Y
+      IF(X)7,8,8
+   7  ZZ=-Z
+      NN=3
+      GOTO 9
+   8  ZZ=DCMPLX(X,-Y)
+      NN=4
+   9  ZZS=ZZ*ZZ
+      XZZS=EXP(-ZZS)
+      ABSZ=ABS(ZZ)
+      IF(ABSZ-10.0D0)10,10,23
+  10  IF(YY-1.0D0)11,12,12
+  11  IF(ABSZ-4.0D0)13,18,18
+  12  IF(ABSZ-1.0D0)13,18,18
+C
+! POWER SERIES (SEE 7.1.5 AS, p. 297; 7.6.1 Ol)
+! In the series, n-th term for -iz is a z**2*(2n-1)/(n*(2n+1))
+! multiple of the (n-1)-th term
+! The overall prefactor of the series is -2*i/\sqrt{\pi} for (-iz)
+! argument
+!
+! One wonders why not the power series 7.1.8 AS, p. 297; 7.6.3 Ol
+! is being used?? The latter would lead directly
+! to the Faddeeva error function w(z)??? TODO
+C
+  13  Q=1.0D0          !provides n!
+      FACTN=-1.0D0     !provides (2n-1)
+      FACTD=1.0D0      !provides (2n+1)
+      TERM1=ZZ         !==z**2  ... the first term of the sum for n=0
+      SUM=ZZ           !==z**2  ... the first term of the sum for n=0
+
+  14  DO N=1,5
+      FACTN=FACTN+2.0D0
+      FACTD=FACTD+2.0D0
+      FACT=FACTN/(Q*FACTD)  !=(2n-1)/(n*(2n+1))
+
+      TERM1=FACT*ZZS*TERM1  !generates nth term from the (n-1)th term
+      SUM=SUM+TERM1         !summation
+
+      Q=Q+1.0D0
+      enddo
+
+      ABTERM=ABS(TERM1)
+      IF(ABTERM-EPS)17,16,16
+  16  IF(Q-100.0D0)14,17,17
+
+  17  FACT=2.0D0*SQRT(API)
+      SUM=FACT*CI*SUM       !adds the missing prefactor 2*i/\sqrt{\pi} for
+                            !the (-iz) argument to provide -erf(-iz)
+      CER=XZZS+XZZS*SUM     !generates Faddeeva error function w(z)
+                            !according to 7.1.3 AS; 7.2.3 Ol
+      GOTO 24
+C
+C     CONTINUED FRACTION THEORY (W(Z) IS RELATED TO THE LIMITING
+C     VALUE OF U(N,Z)/H(N,Z), WHERE U AND H OBEY THE SAME
+C     RECURRENCE RELATION IN N. SEE FADDEEVA AND TERENTIEV
+C     (TABLES OF VALUES OF W(Z) FOR COMPLEX ARGUMENTS, PERGAMON
+C     N.Y. 1961)
+!
+!  7.9 Ol
+C
+  18  TERM2=DCMPLX(1.D6,0.0D0)
+      Q=1.0D0
+      H1=CONE
+      H2=2.0D0*ZZ
+      U1=CZERO
+      RTPI=2.0D0*SQRT(PI)
+      U2=DCMPLX(RTPI,0.0D0)
+  19  TERM1=TERM2
+      DO 20 N=1,5
+      H3=H2*ZZ-Q*H1
+      U3=U2*ZZ-Q*U1
+      H1=H2
+      H2=2.0D0*H3
+      U1=U2
+      U2=2.0D0*U3
+  20  Q=Q+1.0D0
+      TERM2=U3/H3
+      TEST=ABS((TERM2-TERM1)/TERM1)
+      IF(TEST-EPS)22,21,21
+  21  IF(Q-60.0D0)19,19,13
+  22  CER=API*CI*TERM2
+      GOTO 24
+C
+!
+!      7.12 Ol
 C     ASYMPTOTIC SERIES: SEE ABRAMOWITZ AND STEGUN, P328  
 C  
   23  CER=0.5124242D0/(ZZS-0.2752551D0)+0.05176536D0/(ZZS-2.724745D0)  
