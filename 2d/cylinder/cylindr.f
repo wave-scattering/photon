@@ -1007,6 +1007,9 @@ ct      omega=rsnm*1.08881593d0*8.65d15/2.99792458d17
 ct      else if (istep.eq.2) then
 ct      omega=rsnm*0.75975156d0*8.65d15/2.99792458d17
 ct      end if        !end Ruppin test
+ct      sodium Drude fit values from Ruppin imply
+ct      PLASMA=\ld_p=217.8 nm
+ct      which implies running the code for lambda around between 400 and 150 nm
 
       lambda=2.d0*pi*rsnm/(omega*rmuf)   !vacuum wavelength; goes to mediumn
       xs=omega*RMUF*dble(sqrt(zeps0))    !conventional size parameter - needed to define

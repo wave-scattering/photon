@@ -1,7 +1,7 @@
       subroutine dlmsf2in3(lmax,nbas,csigma,ak,dlm)            
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+C--------/---------/---------/---------/---------/---------/---------/--
 c
-c     THIS ROUTINE CALCULATES EXPANSION COEFFICIENTS D_{LL'} 
+c     THIS ROUTINE CALCULATES EXPANSION COEFFICIENTS D_{L}
 c     (THE LATTICE SUMS)  IN 
 c
 c        D_{\LD}=G_{0\LD}-G^P_0=\SUM_L D_L j_l(\sg R) Y_L(R)
@@ -9,8 +9,10 @@ c
 c
 c----- calculation of kambe structure constants following method
 c      outlined by kambe in z. naturforsch 23a 1280, (1968).
-c      the calculation is for a general non-coplaner layer.  thus
-c      the restriction l-abs(m) = even integer no longer holds.
+!          Alternatively JPA39, 11247-82 (2006)
+!
+c      The calculation is for a general non-coplaner layer, thus
+c      the restriction l-abs(m) = even integer need no longer hold.
 c      (1) dlm1 the reciprocal space summation
 c      (2) dlm2 the real space summation
 c      (3) dlm3 term added to l=m=0, i=j structure constant
@@ -18,6 +20,7 @@ c     (DL1 has correct factor i^{1-m} instead of i^{1+|m|} in Kambe)
 c 
 c      set up for n atoms per unit cell by j.m.maclaren                   
 c      october/1987 
+c
 c      cx lines are those suppressed of the original program  
 c
 c    The output (in diagonal case) coincides with that of DLSUMF2IN3   
@@ -26,7 +29,7 @@ c
 *  !!!  Compared to (4.72) of {Pe} or (48) of Ka2, (3.20) of Ka3 !!! 
 *            DLM's in LEED had  additional 1/sigma factor. 
 c        The additional (1/sigma)-factor is corrected  here. 
-c        Convergence test improved to term by term (TOL quaranteed for
+c        Convergence test improved to term by term (TOL guaranteed for
 c        each lm-term and not only their sum)
 c        Check of stability of the Ewald summation added.
 c
@@ -41,7 +44,7 @@ c     Calling program should have the following common blocks:
 c
 c      common/x1/      ar1,ar2         !direct lattice basis vectors
 c      common/xin/     b1,b2           !reciprocal lattice basis vectors
-c      common/xar/ area               !unit cell area
+c      common/xar/     area            !unit cell area
 c -----  
 c 
 c Given the cutoff lmax on the order of scattering matrices, the DL
@@ -62,11 +65,36 @@ C   ka2   ... sigma**2
 C   ka    ... sigma (enters f1,f2 constants)
 C   kaz   ... K_perp
 C   gkp   ... K_parallel=|\vk_parallel+\vk_s|
-C   CERF  ... error functions
+C   CERF  ... Faddeeva complex error function
 C   ecomp ... 
 C   irecip ... number of rings of reciprocal lattice vectors in the DL1
 C             summation    
-C   DTHR  ... required % precision of DL's calculation     
+C   DTHR  ... required % precision of DL's calculation
+!   EMACH/1.D-12/ ... AN OLD MACHINE ACCURACY  !TODO
+!
+!   gamfn(0:lmax) ... stores the incomplete gamma functn gamfn that is
+!                     obtained by the recurrence [Eq. (42) of Ka2; JPA39 eq 85]
+!                     gamfn(n) corresponds to the first argument of
+!                     the incomplete gamma functn being (1/2)-n.
+!                     The initial gamfn(0) determined by [(A9) of Ka2]
+!
+!   phim(m)=e^{-im\phi_{K//}}
+!
+!   dlm1(lm,1)= \sum acc*phase*phim(m)*pref1(lm)/ka
+!
+!  ==================
+!   Preset in dlmset:
+!
+!   fctrl(n)=n!
+!
+!   denom1(iden)=1.d0/(fctrl(n)*fctrl((l-m-n-n)/2)*fctrl((l+m-n-n)/2))
+!                  determined for iden=index(lmeven) between 0 and (l-abs(m))/2
+!                  This is the denominator of the last fraction in
+!                  JPA39 eq. 85; cf. Eq 40 of Ka2;
+!
+!   pref1(lm)=-sqrt((2*l+1)*fctrl(l+m)*fctrl(l-m))*i^{1-m}/(2^l*area)
+!
+!   im(m)=i^{1-m}, im(-m)=i^{1+m}
 C--------/---------/---------/---------/---------/---------/---------/--                                                                           
       implicit none
       integer LMAXD,LMAX1D,lay,laytm,natlm,lmxm3,nfm,ndlmm,nrmax,nkmax
@@ -94,27 +122,32 @@ c     LOCAL SCALARS
 c 
       logical coplnr,islmev,sumn,ynstab 
 cx    ,lpr
-      integer i,j,j1,ib,iden,lm,lmeven,m,n,lmax,ipr,s,ir,ipar,ifl,ilf,
-     1 l,nr,nk,ndlm,nf,itst,nbas
+
+      integer, intent(in) :: lmax,nbas
+      integer i,j,j1,ib,iden,lm,lmeven,m,n,ipr,s,ir,ipar,ifl,ilf,
+     1 l,nr,nk,ndlm,nf,itst
       real*8 PI,EMACH,rtpi,test,akx,aky,gkx,gky,
      1 gkp2,gkp,afac,drx,dry,drz,drz2,dr,dr2,rix,riy,riz,rjx,rjy,
      2 rjz,xetest,gamma
 c DTHR,testp,diff,
+      complex*16, intent(in) :: csigma
       complex*16 ka,ka2,alpha,rtal,kaz,kaz2,f1,f2,f3,fac,phi,cz2,phase,
-     1 il,ilm1,ilp1,acc,acccop,sums,cx,cz,crtx,csigma,sth,cth,cerff2,
+     1 il,ilm1,ilp1,acc,acccop,sums,cx,cz,crtx,sth,cth,cerff2,
      2 cerff3,zdl1,zdl2
-c 
-c     LOCAL ARRAYS
-c--------/---------/---------/---------/---------/---------/---------/--   
+! 
+!     LOCAL ARRAYS
+!--------/---------/---------/---------/---------/---------/---------/--   
       integer natl(laytm),index(ndlmm)
 cx     1 ,isym(laytm),nsk(npm),nsr(npm)
 
-      real*8 ak(2),ar1(2),ar2(2),arv(2,2),b1(2),b2(2),bv(2,2),tau(2),  
+      real*8, intent(in) :: ak(2)
+      real*8 ar1(2),ar2(2),arv(2,2),b1(2),b2(2),bv(2,2),tau(2),
      1 pos(3,natlm,laytm),denom1(lmxm3),fctrl(0:4*lmaxd),rv(2,nrmax),
      2 kv(2,nkmax),xtol(ndlmm,nfm),xxtol(ndlmm,nfm)
 
       complex*16 czero,ci
-      complex*16 dlm(ndlmm,nfm),dlm1(ndlmm,nfm),dlm2(ndlmm,nfm),
+      complex*16, intent(out) :: dlm(ndlmm,nfm)
+      complex*16 dlm1(ndlmm,nfm),dlm2(ndlmm,nfm),
      1 gamfn(0:lmaxd),delta(0:2*lmaxd,nfm),phim(-2*lmaxd:2*lmaxd), 
      1 cerf,pref1(ndlmm),gkpbka(0:4*lmaxd),kazbka(-1:4*lmaxd-1), 
      2 kadrb2(0:2*lmaxd),kadrz(0:2*lmaxd,nfm),ylm(ndlmm)
@@ -147,9 +180,7 @@ c,DTHR/1.D-6/
 C 
 C    Assignement of constant to execute DLMNEW of LEED
 C
-      ipr=2
-      akx=ak(1)
-      aky=ak(2)
+      ipr=2      !print parameter
       lay=1
       natl(lay)=nbas
 *
@@ -192,12 +223,17 @@ c        pos(3,3,1)=-1.d0/(2.d0*sqrt(3.d0))
       tau(1)=0.d0
       tau(2)=0.d0
 *
-      do i=1,2    !basis vectors of the direct and dual lattices
+      assign_vectors: do i=1,2   
+
+!Set basis vectors of the direct Bravais lattice:
        arv(i,1)=ar1(i)
        arv(i,2)=ar2(i)
+
+!Set basis vectors of the reciprocal lattice:
        bv(i,1)=b1(i)
        bv(i,2)=b2(i)
-      enddo
+
+      enddo assign_vectors
 *
 ! generate the direct and dual lattices
 
@@ -245,22 +281,26 @@ c
       ka2=csigma**2  !+(0.d0,1.d0)*emach    !ka2 should be sigma**2
       ka=sqrt(ka2)                          !hence ka should be sigma
       alpha=ka2*q0/2.d0
+      rtal=sqrt(alpha)
 c
-c  alpha=|sigma**2*area/(pi+pi+pi+pi)| as in leed by j.b. pendry 
+c  alpha=|sigma**2*area/(pi+pi+pi+pi)| in leed by j.b. pendry 
 c                                  (see Eq. (4.73), p. 137 there)
 c  corresponds to the choice of
 c      alpha=sigma**2*eta/2 = sigma**2*area/(pi+pi+pi+pi)
-c            (see Eq. (4.73), p. 137 in leed by j.b. pendry)
+c      (see Eq. (4.73), p. 137 in leed by j.b. pendry)
 c  
-      rtal=sqrt(alpha)
-
 ************************************************************************
 *                         DL1 term                                     *
 ************************************************************************
 c
 c----- start loop over l & m in dlm1 calculation, a test for
 c      convergence is made on each l,m value of structure constants
-c  
+c
+
+!Set Bloch vector:
+      akx=ak(1)
+      aky=ak(2)  
+
       if (ipr.gt.2) write (6,260) 
 cx      testp=0.d0
       ib=0
@@ -269,52 +309,75 @@ c----- loop over reciprocal lattice vectors until convergence achieved
 c 
 cx      do 130 i1=1,nnsk            !??? i1,nnsk
 cx      do 120 j1=1,nsk(i1)
-      do 120 j1=1,nk
-*
+
+      dl1_lattice_sum: do j1=1,nk
+
 cx      lpr=.false.
 cx      if (j1.eq.nk) lpr=.true.
-      ib=ib+1
+      ib=ib+1                     !>=1 loop counter - TODO: needed at all?
       gkx=akx+kv(1,ib)            !akx ... x-component of Bloch// 
       gky=aky+kv(2,ib)            !aky ... y-component of Bloch// 
       gkp2=gkx*gkx+gky*gky
-      gkp=sqrt(gkp2)
+      gkp=sqrt(gkp2)              !K_\parallel
       kaz2=ka2-gkp2               !ka2 ... sigma**2
       kaz=sqrt(kaz2)              !kaz ... K_perp
 c 
-c----- set up exp(-imphi(g//))  
+c----- set up exp(-i*m*phi(K//))  
 c  
       phi=1.d0
       phim(0)=1.d0
       if (gkp.gt.emach) phi=dcmplx(gkx,gky)/gkp    !phi=e^{i\phi_{K//}}
 c
-      do 10 m=1,2*lmax   
+      do m=1,2*lmax   
       phim(m)=phim(m-1)/phi            !phim(m)=e^{-im\phi_{K//}}
       phim(-m)=phim(1-m)*phi 
-   10 continue
+      enddo
 c 
 c----- calculate the incomplete gamma functn gamfn
 c      note this is limit of delta as cz->0
-c 
-      cx=-kaz2*q0/2.d0                       !=x of (A.3.1) of Ka3
-*  
-      if (dble(cx).ge.0.) then                   !cf. (A.3.6) of Ka3
+
+! Set the second argument of gamfn in JPA39 eq. 85:
+      cx=-kaz2*q0/2.d0                !kaz=K_perp; Eqs 40-1 of Ka2; JPA39 eq. 85
+                                      !=x of (A.3.1) of Ka3
+
+
+      crtx_if: if (dble(cx).ge.0.) then                   !cf. (A.3.6) of Ka3
+
+!K_perp purely imaginary and the argument of cerf=w(ci*sqrt(cx))
+!is sqrt(|cx|)
+
         crtx=sqrt(cx)
-      else 
+
+      else   !dble(cx)<0.
+
+!K_perp purely real and the argument of cerf
+!is -ci*sqrt(|cx|), because cx=e^{-i\pi}*K_perp^2*\eta/2.d0
+
         crtx=-(0.d0,1.d0)*sqrt(-cx)
-      end if
+
+      end if crtx_if
+
 c      write(6,*)'sqrt(-cx)=',sqrt(-cx)
 *
+! Prepare recurrence in JPA39 eq. 88
+! Initialize gamfn(0):
+
       f1=exp(-cx)
       gamfn(0)=rtpi*f1*cerf((0.d0,1.d0)*crtx,emach)    !cf. (A9) of Ka2
       fac=crtx  
       afac=0.5d0
-* gamma recurrence [Eq. (42) of Ka2] beginning with b=-1/2
-*
-      do 20 n=0,lmax-1  
-      fac=fac/cx 
+
+! gamma recurrence [Eq. (42) of Ka2; JPA39 eq. 88] beginning with b=-1/2
+! The range of b is -1/2,-3/2,-5/2, ... which are all negative numbers
+! To this range of b corresponds afac= 1/2,3/2,5/2, ...
+! of opposite sign which has the effect to change the signs on the rhs of
+! gamma recurrence in JPA39 eq 85
+
+      do n=0,lmax-1  
+      fac=fac/cx       ![-(0.d0,1.d0)*sqrt(-cx)]/cx**(n+1)
       gamfn(n+1)=(fac*f1-gamfn(n))/afac                                      
       afac=afac+1.d0   
-   20 continue                          !Kambe's Gamma calculated 
+      enddo                    !Kambe's Gamma calculated 
 c   
 c                                                                        
 c----- set up delta(n) the generalisation of gamfn(n) for non coplanar
@@ -325,24 +388,26 @@ c
       do 50 j=1,natl(lay) 
       do 50 i=1,natl(lay)  
 *
-      if (i.eq.j.and.i.gt.1) go to 50    ! go to diagonal term
+      if (i.eq.j.and.i.gt.1) go to 50   !skip the main loop to avoid
+                                        !repeated calculation of the diagonal term
       ifl=ifl+1   
-      drz=pos(1,i,lay)-pos(1,j,lay)      ! pos are read as (z,x,y),
-C                                        ! hence drz is the difference
-C                                        ! of z-components
+      drz=pos(1,i,lay)-pos(1,j,lay)    ! pos are read as (z,x,y),
+C                                      ! drz is the difference of z-components
+C                                      ! of two scattering centers
       drz2=drz*drz   
-      coplnr=(abs(drz).lt.1.0d-6) 
+      coplnr=(abs(drz).lt.1.0d-6)
+
       if (.not.coplnr) then 
 c  
 c----- i-j not coplanar - therefore calculate full delta(n)
-c      and (ka*drz)**i, i = 0,2*lmax 
+c      and (ka*drz)**l, l = 0,2*lmax 
 c 
       f1=ka*drz 
       kadrz(0,ifl)=1.d0
 *
-      do 30 l=1,2*lmax 
+      do l=1,2*lmax 
       kadrz(l,ifl)=kadrz(l-1,ifl)*f1         !=(ka*drz)^l
-   30 continue                                                               
+      enddo                                                            
 c
       cz2=kaz2*drz2 
       cz=sqrt(cz2)                           !cf. (A.3.7) of Ka3
@@ -354,19 +419,22 @@ c
       afac=0.5d0 
       fac=crtx  
 c   
-      do 40 n=0,2*lmax-2 
-      fac=fac/cx 
+      do n=0,2*lmax-2 
+      fac=fac/cx   !cx**((1/2)-n)
 *
 c (A.3.3) recurrence of Ka3 beginning with n=1:
       delta(n+2,ifl)=(-afac*delta(n+1,ifl)-delta(n,ifl)+f1*fac)*4.d0/cz2 
 *
-   40 afac=afac+1.d0                                                     
+      afac=afac+1.d0 
+      enddo                                                    
 c
-      endif                                                                  
+      endif          ! .not.coplnr
+                                                            
    50 continue       ! Kambe's delta term calculated
-***
-c                       diagonal term
-c
+
+
+c                     The diagonal term
+! Set numerator of the last fraction in JPA39 eq. 85
 c----- set up (gkp/ka)**i , i= 0,4*lmax 
 c      set up (kaz/ka)**i , i=-1,4*lmax-1
 c
@@ -374,9 +442,11 @@ c
       f2=kaz/ka               ! f2 = K_perp/sigma
       gkpbka(0)=1.d0 
       kazbka(-1)=1.d0/f2
-      do 60 l=1,4*lmax 
+
+      do l=1,4*lmax 
       gkpbka(l)=gkpbka(l-1)*f1       !gkpbka(l)=(|\vk_//+\vk_s|/sigma)^l
-   60 kazbka(l-1)=kazbka(l-2)*f2     !kazbka(l)=(K_perp/sigma)^{l}
+      kazbka(l-1)=kazbka(l-2)*f2     !kazbka(l)=(K_perp/sigma)^{l}
+      enddo
 c
 c----- loop over angular momentum 0 to 2*lmax                                
 c      note whether (lm) is odd or even
@@ -395,24 +465,31 @@ c----- loop over the atoms
 c
       ifl=0 
       sumn=.false.          !a flag to prevent repetitive calc. 
-c                           of the same constant in the loop below
+                            !of the same constant in the loop below
 *
       do 100 j=1,natl(lay)
       do 100 i=1,natl(lay)
 *
-      if (i.eq.j.and.i.gt.1) go to 100
+      if (i.eq.j.and.i.gt.1) go to 100  !skip the main loop to avoid
+                                        !repeated calculation of the diagonal term
+! ======================================================================
+!                 ------ generic complex lattice part -----------
 *
       ifl=ifl+1                 !counts the number of (ij) pairs
                                 !ifl=1 for i=j=1
+
       drx=pos(2,i,lay)-pos(2,j,lay)
       dry=pos(3,i,lay)-pos(3,j,lay)
       drz=pos(1,i,lay)-pos(1,j,lay)
       phase=exp((0.d0,1.d0)*(gkx*drx+gky*dry))        !=e^{iK_//.a_//}
+!
+! phase==1 for simple Bravais lattice
+!
       coplnr=(abs(drz).lt.1.0d-6) 
 
       if (coplnr) then 
 c 
-c----- calculate acc, the sum over n
+c----- calculate acc, the sum over n in JPA39 eq. 85
 c      note we only need to calculate this once, hence after first
 c      time through set sumn=.true. to flag this
 c
@@ -420,19 +497,30 @@ c
 *
        if (islmev) then
          if (.not.sumn) then
+
          acccop=0.d0
          iden=index(lmeven)
 *
-         do 70 n=0,(l-iabs(m))/2
+         do n=0,(l-iabs(m))/2
          iden=iden+1 
-      acccop=acccop+gkpbka(l-2*n)*kazbka(2*n-1)*denom1(iden)*gamfn(n)  
-  70     continue     
-         endif
+
+      acccop=acccop+gkpbka(l-2*n)*kazbka(2*n-1)*denom1(iden)*gamfn(n) 
+
+!   denom1(iden)=1.d0/(fctrl(n)*fctrl((l-m-n-n)/2)*fctrl((l+m-n-n)/2))
+!                  determined for iden=index(lmeven) between 0 and (l-abs(m))/2
+!                  This is the denominator of the last fraction in
+!                  JPA39 eq. 85; cf. Eq 40 of Ka2;
+ 
+         enddo  
+
+         endif  !.not.sumn
+
        acc=acccop
        sumn=.true.
-       endif
+
+       endif   !islmev
 *
-      else                 ! if (.not.coplnr)
+      else                 ! (.not.coplnr)
 c                                                                            
 c----- non coplanar ij need to sum both n and s for acc                     2048
 c                                                                           2049
@@ -455,15 +543,17 @@ c      l-abs(m) odd  => s odd  and n <= s <= min(2n,l-abs(m))
       acc=acc+delta(n,ifl)*kazbka(2*n-1)*sums
   90  continue                                  ! sum over n
 c 
-      endif
+      endif   !coplanar
 c
-c----- assemble dlm1 from acc and other factors
-c
+c----- assemble dlm1 from acc and other factors - JPA39 eq. 85
+
       zdl1=acc*phase*phim(m)*pref1(lm)/ka
       dlm1(lm,ifl)=dlm1(lm,ifl)+zdl1
+
 c Summary:
-*    acc=\sum_n\sum_s delta(n,ifl)*kazbka(2*n-1)*sums 
-*    phase=e^{i(k_//+k_s).a_//}=e^{iK_//.a_//}
+!    acc=\sum_n gkpbka(l-2*n)*kazbka(2*n-1)*denom1(iden)*gamfn(n) for coplanar
+*    acc=\sum_n\sum_s delta(n,ifl)*kazbka(2*n-1)*sums for noncoplanar
+*    phase=e^{i(k_//+k_s).a_//}=e^{iK_//.a_//} ... ==1 for a simple Bravais lattice
 *    phim(m)=e^{-im\phi_{K//}}
 *    pref1(lm)=-2^{-l}*sqrt((2*l+1)*fctrl(l+m)*fctrl(l-m))*i^{1-m}/area
 * ===>
@@ -502,7 +592,7 @@ cx      diff=abs((testp-test)/test)
 cx      if (diff.lt.dthr) go to 140
 cx      testp=test
 *
-  120 continue                      !loop over reciprocal lattice vectors
+  120   end do dl1_lattice_sum     !loop over reciprocal lattice vectors
 c 
 c----- End of the loop over reciprocal lattice vectors 
 c
@@ -537,7 +627,6 @@ c----- start loop over real space vectors in dlm2 calculation, a test of
 c      convergence is made on the sum lm of abs(dlm2(lm,ij))
 c 
       if (ipr.gt.2) write (6,290)
-      ir=0 
 cx      testp=0.d0
 *
 * Renitialization of tolerances:
@@ -552,12 +641,17 @@ cx      testp=0.d0
 c
 c----- start loop over real space vectors
 c
+      ir=0 
+
 cx      do 200 i1=1,nnsr
 cx      do 190 j1=1,nsr(i1)
-      do 190 j1=1,nr
+
+! dl2_lattice_sum:
+      do j1=1,nr
+
 cx      lpr=.false.
 cx      if (j1.eq.nr) lpr=.true.
-      ir=ir+1
+      ir=ir+1                     !>=1 loop counter
 *
       phase=exp(-(0.d0,1.d0)*(akx*rv(1,ir)+aky*rv(2,ir)))  !=e^{-i\vk//.\vr_s}
 * akx,aky - // components of the Bloch vector
@@ -594,21 +688,24 @@ c
 c
 c----- calculate spherical harmonics ylm(dr)
 c
-      call angle (drx,dry,drz,cth,sth,phi)
-      call sphrm (ylm,ndlmm,cth,sth,phi,2*lmax)       !in Clebsh-Gordan
+      call angle(drx,dry,drz,cth,sth,phi)
+      call sphrm(ylm,ndlmm,cth,sth,phi,2*lmax)       !in Clebsh-Gordan
 c
-c----- calculate (-kdr/2)**i, i=0,2*lmax
+c----- calculate (-ka*dr/2)**l, l=0,2*lmax
 c
       fac=-ka*dr*0.5d0
       kadrb2(0)=1.d0
-      do 150 l=1,2*lmax
-  150 kadrb2(l)=kadrb2(l-1)*fac           !=(-sigma*|\vr_s+\va|/2)**l
+
+      do l=1,2*lmax
+      kadrb2(l)=kadrb2(l-1)*fac           !=(-sigma*|\vr_s+\va|/2)**l
+      enddo
 c
 c----- recurrence relation for calculating il as in leed by pendry
 c
       f1=exp(alpha-ka2*dr2/(alpha+alpha+alpha+alpha))
       f2=rtal+(0.d0,1.d0)*ka*dr/(rtal+rtal)
       f3=-rtal+(0.d0,1.d0)*ka*dr/(rtal+rtal)
+
       cerff2=cerf(f2,emach)
       cerff3=cerf(f3,emach)
 *
@@ -622,11 +719,12 @@ c
       fac=alpha**(-0.5d0)
 *
       do 170 l=0,2*lmax
-cdir$ shortloop
       do 160 m=-l,l
-      lm=lm+1
+      lm=lm+1                     !>=1 loop counter
+
       zdl2=-csigma*phase*dconjg(ylm(lm))*kadrb2(l)*il/(rtpi+rtpi)
       dlm2(lm,ifl)=dlm2(lm,ifl)+zdl2
+
       test=test+abs(dlm2(lm,ifl))
 cx      if (ipr.gt.2.and.lpr) write (6,270) l,m,ifl,i1,dlm2(lm,ifl),abs
 cx     1 (dlm2(lm,ifl))
@@ -665,9 +763,11 @@ cx       if (test.lt.1.0d-10) go to 190
 cx      diff=abs((testp-test)/test)
 cx      if (diff.lt.dthr) go to 210
 cx      testp=test
-  190 continue                         !loop over real space vectors
+
+  190  end do !dl2_lattice_sum   !loop over real space vectors
+
 *
-        if (yntest.eq.'y'.or.yntest.eq.'Y') then
+         if (yntest.eq.'y'.or.yntest.eq.'Y') then
          do lm=1,ndlm
          do ilf=1,nf
           if (xtol(lm,ilf).gt.tol) then
@@ -678,10 +778,10 @@ cx      testp=test
           end if
          enddo
          enddo
-        end if        
+        end if
 *
 c 
-c----- if convergence is not achieved by ireal rings of real space
+c----- if convergence is not achieved by i-real rings of real space
 c      vectors print out an error message
 c
 cx      write (6,300) akx,aky,l,m 
@@ -698,11 +798,11 @@ c Using the complex error function:
 c             
 c     DL3=-(sigma/(2.*pi))*((exp(alpha)*cerf(rtal,emach)-1.d0)*sqrt(pi)
 c             -exp(alpha)/sqrt(alpha))
-c
+
       dlm(1,1)=-0.5d0*csigma*((exp(alpha)*cerf(rtal,emach)-1.d0)*rtpi/
      1 (0.d0,1.d0)-exp(alpha)/rtal)/pi + 
      2 dlm1(1,1)+dlm2(1,1)                     !dlm(1,1) complete
-*
+
 *  !!!  Compared to (4.72) of {Pe} or (48) of Ka2, DL3 in LEED had   !!! 
 *         additional 1/sigma factor (as for DL1 and DL3)
 *         The additional (1/sigma)-factor is corrected for here.
@@ -713,9 +813,11 @@ c
 c----- add up contributions from dlm1 and dlm2 for lm=1 and i.neq.j
 c
       if (ifl.gt.1) then
-        do 220 i=2,ifl                   !over off-diagonal terms
+        do i=2,ifl                   !over off-diagonal terms
+
         dlm(1,i)=dlm1(1,i)+dlm2(1,i)
-  220   continue
+
+      enddo
       end if
 c 
 c----- add up contributions from dlm1 and dlm2 for lm>=2 
@@ -725,12 +827,12 @@ c
       do 240 j=1,natl(lay)
       if (i.eq.j.and.i.gt.1) go to 240
       ifl=ifl+1
-      lm=1
       itst=0
 *
+      lm=1
       do 230 l=1,2*lmax
       do 230 m=-l,l
-      lm=lm+1                            ! from lm=2
+      lm=lm+1                    !>=2 loop counter
 *
 * security trap for numerical stability of the Ewald summation:
 *
@@ -740,16 +842,18 @@ c
          if (ynstab) then
          if (itst.gt.5) then
          ynstab=.false.
+
          write(6,*)'In DLMSF2IN3:'
          write(6,*)'The Ewald summation may be instable - change Q0'
          write(50,*)'#In DLMSF2IN3 for sigma=', ka
          WRITE(50,*)'#The Ewald summation may be instable - change Q0'
+
          end if
          end if
        end if
-*
+
       dlm(lm,ifl)=dlm1(lm,ifl)+dlm2(lm,ifl)
-*
+
   230 continue
   240 continue
 c 
@@ -757,9 +861,13 @@ c----- print out structure constants
 c
       if (ipr.gt.2) then
       write (6,310)
-      do 250 i=1,lm
-      do 250 j=1,ifl
-  250 write (6,320) i,j,dlm(i,j)
+
+      do i=1,lm
+      do j=1,ifl
+       write (6,320) i,j,dlm(i,j)
+      enddo
+      enddo
+
       endif
 cx
 cx      do 252 i=1,ndlm
@@ -782,7 +890,8 @@ cx     1 'k // = ',2e14.5,/1x,'l = ',i2,', m = ',i2)
   310 format (//1x,'dlm'/2x,'lm',4x,'ifl',5x,'re(dlm)',6x,'im(dlm)'/
      1 ,1x,38('-'))
   320 format (1x,2i5,1p2e17.10)
-      end
+
+      end subroutine dlmsf2in3
 c
 c
 c
@@ -796,14 +905,14 @@ c fctrl(i)=i!
 c im(m)=i^{1-m}
 c im(-m)=i^{1+m}
 c--------/---------/---------/---------/---------/---------/---------/--
-c
       implicit none
       integer LMAXD,LMAX1D,lmxm3,ndlmm
       parameter (LMAXD=8,LMAX1D=LMAXD+1)
       parameter (lmxm3=lmax1d*lmax1d*lmax1d)
       parameter (ndlmm=(2*lmaxd+1)*(2*lmaxd+1)) 
 c
-      integer i,iden,l,m,lm,lmax,lmeven,n
+      integer, intent(in) :: lmax
+      integer i,iden,l,m,lm,lmeven,n
       real*8 area,const
       integer index(ndlmm)
       real*8 fctrl(0:4*lmaxd),denom1(lmxm3)
@@ -819,14 +928,17 @@ c
 c----- generate factorials from 0 to 4*lmax
 c 
       fctrl(0)=1.d0
-      do 10 i=1,lmax+lmax+lmax+lmax 
-   10 fctrl(i)=fctrl(i-1)*dble(i)
+      do i=1,lmax+lmax+lmax+lmax 
+       fctrl(i)=fctrl(i-1)*dble(i)
+      enddo
 *
       im(0)=(0.d0,1.d0)
-      do 20 m=1,lmax+lmax
+
+      do m=1,lmax+lmax
 c
       im(m)=im(m-1)/(0.d0,1.d0)     !im(m)=i^{1-m}
-   20 im(-m)=im(1-m)*(0.d0,1.d0)    !im(-m)=i^{1+m}
+      im(-m)=im(1-m)*(0.d0,1.d0)    !im(-m)=i^{1+m}
+      enddo
 c 
 c----- generate prefactors and denominators for dlm1
 c
@@ -840,46 +952,54 @@ c
       islmev=(mod(l-iabs(m),2).eq.0)
       lm=lm+1
       if (islmev) lmeven=lmeven+1
-      const=-sqrt((l+l+1)*fctrl(l+m)*fctrl(l-m))/(2**l)
+      const=-sqrt((l+l+1)*fctrl(l+m)*fctrl(l-m))/(2**l)   !checked  that it divides by 2
       pref1(lm)=const*im(m)/area
 *
       if (islmev) then
+
       index(lmeven)=iden
 *
-      do 30 n=0,(l-abs(m))/2
+      do n=0,(l-abs(m))/2
       iden=iden+1
-   30 denom1(iden)=1.d0/(fctrl(n)*fctrl((l-m-n-n)/2)*fctrl((l+m-n-n)/2))
-      endif
+      denom1(iden)=1.d0/(fctrl(n)*fctrl((l-m-n-n)/2)*fctrl((l+m-n-n)/2))
+      enddo  
+    
+      endif   !islmev
 *
    40 continue
+!
       return
       end
 c
 c
 c
-      subroutine mzero (a,n)
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc     
+      subroutine mzero(a,n)
+C--------/---------/---------/---------/---------/---------/---------/--
 c                                                                            
 c----- zeros a real 1-d array a, dimension n                                 
 c                                                                            
       implicit none
       integer n,i
       complex*16 a(n)          !real*8 a(n)  
-      do 10 i=1,n 
-   10 a(i)=dcmplx(0.d0,0.d0)  !0.d0 
+
+      do i=1,n 
+       a(i)=dcmplx(0.d0,0.d0)  !0.d0 
+      enddo
+
       return 
-      end
+      end subroutine mzero
 c 
 c
 c
-      subroutine angle (x,y,z,cth,sth,phi)
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc     
+      subroutine angle(x,y,z,cth,sth,phi)
+C--------/---------/---------/---------/---------/---------/---------/--    
 c                                                                            
 c----- calculate cos(theta),sin(theta),phi=exp(i*fi) from x,y,z
-c                                                                            
-      implicit none                                            
-      complex*16 cth,sth,phi
-      real*8 rpp,rp,r,x,y,z
+c
+      implicit none
+      real*8, intent(in) :: x,y,z
+      complex*16, intent(out) :: cth,sth,phi
+      real*8 rpp,rp,r
       rpp=(x*x+y*y)
       rp=sqrt(rpp)
       r=sqrt(rpp+z*z)
@@ -893,12 +1013,12 @@ c
       sth=0.d0
       endif
       return                                                                 
-      end       
+      end subroutine
 c 
 c
 c   
-          subroutine sphrm (ylm,nn,ct,st,cf,lmax)
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+       subroutine sphrm(ylm,nn,ct,st,cf,lmax)
+C--------/---------/---------/---------/---------/---------/---------/--
 c >>> nn,ct,st,cf,lmax
 c <<< ylm
 c ==============
@@ -914,8 +1034,13 @@ c      ct=cos(theta), st=sin(theta), cf=exp(i*fi)
 c      lmax  maximum order of l
 c      nn=(lmax+1)**2  ... the number of generated spherical harmonics
 C-----------------------------------------------------------------------  
-      implicit real*8 (a-h,o-z)
-      complex*16 ylm(nn),ct,st,cf,sf,sa,fac
+      implicit none   !real*8 (a-h,o-z)
+      integer, intent(in) :: lmax
+      integer l,m,mm,lm,ln,lp,nn
+      real*8 a,b,asg,fl,fm,pi,pii4
+      complex*16, intent(in) :: ct,st,cf
+      complex*16, intent(out) :: ylm(nn)
+      complex*16  sf,sa,fac
 c
 C ..  DATA STATEMENTS  .. 
 C  
@@ -927,40 +1052,43 @@ c
       if (lmax.eq.0) return
 c
 c----- set ylm (m=l,m=l-1) using explicit expressions (a.16) and (a.17)
-c
+c----- sets also ylm (lm=m=-l,lm+1=m=-l+1)
       a=1.d0
       b=1.d0
       asg=1.d0
       sf=1.d0
       sa=1.d0
-      lp=1
-      do 10 l=1,lmax
+      lp=1     !loop counter
+
+      lloop: do l=1,lmax
       fl=dble(l)
       a=0.5d0*a*fl*(2.d0*fl-1.d0)
       b=fl*b
       asg=-asg
-      lm=lp+1
-      lp=lp+l+l+1
+      lm=lp+1            !>=2  (1,-1)
+      lp=lp+l+l+1        !>=4  (11)
       sf=sf*cf
       fac=sqrt((2.d0*fl+1.d0)*a/(4.d0*pi*b*b))*sa
       ylm(lm)=fac*st/sf
       ylm(lp)=asg*fac*st*sf
       fac=sqrt(2.d0*fl)*fac*ct
       ylm(lm+1)=fac*cf/sf
-      ylm(lp-1)=-asg*fac*sf/cf
-   10 sa=sa*st
+      ylm(lp-1)=-asg*fac*sf/cf  !??? for l=1, lm+1=lp-1=3  ??? TODO
+      sa=sa*st
+      enddo lloop
 c
       if (lmax.eq.1) return
 c 
 c----- set remaining ylm using recurrence relation in l (a.14)
 c
-      do 20 m=2,lmax
+      do m=2,lmax
       mm=m+m-4
       fm=dble(m-2)
       a=sqrt(1.d0/(fm+fm+3.d0))
-      ln=m*m-1
+      ln=m*m-1       !(m-1,m-1) element
       lm=ln-m-m+2
-      do 20 l=m,lmax
+
+      do l=m,lmax
       fl=dble(l)
       b=sqrt((fl+fm)*(fl-fm)/((fl+fl+1.d0)*(fl+fl-1.d0)))
       lp=ln+l+l
@@ -968,7 +1096,12 @@ c
       ylm(lp-mm)=(ct*ylm(ln-mm)-a*ylm(lm-mm))/b
       a=b
       lm=ln
-   20 ln=lp
+      ln=lp
+      enddo
+
+      enddo
+
       return
-      end                                                                  
+      end subroutine sphrm
+
 C (C) Copr. 11/2001  Alexander Moroz

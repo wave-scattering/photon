@@ -24,11 +24,16 @@ C  >>> SPECIFIC FLOAT(integer) ---> DBLE(integer)
 C               INT
 C added implicit 
 C--------------------------------------------------------------------
-      IMPLICIT REAL*8 (A-H,O-Z)
-      IMPLICIT INTEGER (I-N) 
+      IMPLICIT NONE  !REAL*8 (A-H,O-Z)
+!      IMPLICIT INTEGER (I-N)
+      INTEGER NVTOT
       PARAMETER(NVTOT=600)
-      REAL*8 VT(3,NVTOT),TAU(2)
-      REAL*8 BV(2,2),V(2,NVMX),MAGBV
+      INTEGER, intent(in) :: NVMX
+      INTEGER  I,I1,I2,IMX,J,J1,J2,JMX,IMXNB,NB,NB1,NB2,NV
+      REAL*8, intent(in) :: BV(2,2),TAU(2)
+      REAL*8, intent(out) ::V(2,NVMX)
+      REAL*8 MAGBV,T,V0,PI,V2MX
+      REAL*8 VT(3,NVTOT)
 *
       if(nvmx.gt.nvtot) then
        write(6,*)'In latgen2d:'

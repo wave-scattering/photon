@@ -529,12 +529,12 @@ c      READ(10,204) AQ(1),AQ(2),POLAR,FEIN
                                  
       ELSE IF (KTYPE.GE.1) THEN 
 
-      DATA THETA/6.d0/
+      DATA THETA/6.d0/    !THETA/AK(1) =   0.00159155
       DATA FI/0.d0/
 C             "THETA" AND "FI" ARE THE POLAR ANGLES (IN DEG) OF INCIDENCE 
 C             OF AN INCIDENT EM WAVE
 
-      THETA=THETA*PI/180.D0  
+      THETA=asin(1.0000003575641670d-2/3.7d0)  ! THETA*PI/180.D0
       FI=FI*PI/180.D0 
       
       DATA POLAR/'S '/
@@ -4989,7 +4989,8 @@ C=======================================================================
       FUNCTION CERF(Z,EMACH)  
       IMPLICIT NONE 
 C     ------------------------------------------------------------------  
-C     CERF,GIVEN COMPLEX ARGUMENT Z,PROVIDES THE COMPLEX ERROR FUNCTION: 
+C     GIVEN COMPLEX ARGUMENT Z, PROVIDES THE FADDEEVA 
+C     COMPLEX ERROR FUNCTION (Eq. (7.2.3) of \ct{Ol}): 
 C     W(Z)=EXP(-Z**2)*(1.0-ERF(-I*Z))  
 C     THE  EVALUATION  ALWAYS  TAKES   PLACE  IN  THE  FIRST   QUADRANT.  
 C     ONE  OF  THREE METHODS  IS  EXPLOYED  DEPENDING ON THE SIZE OF THE 
@@ -4999,7 +5000,7 @@ C     ------------------------------------------------------------------
 C  
 C ..  SCALAR ARGUMENTS  ..  
 C  
-      REAL*8     EMACH  
+      REAL*8, intent(in) :: EMACH
       COMPLEX*16 Z  
 C  
 C ..  LOCAL SCALARS  ..  

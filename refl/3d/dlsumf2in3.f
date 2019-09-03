@@ -13,7 +13,12 @@ C     LMAX        : THE ACTUAL CUTOFF IN SPHERICAL WAVES EXPANSIONS
 C     AK(1), AK(2): THE X  AND Y COMPONENTS OF THE  MOMENTUM PARALLEL 
 C                   TO THE SURFACE, REDUCED TO THE 1ST BRILLOUIN ZONE
 C                   
-C     EMACH IS THE MACHINE ACCURACY.   
+!     EMACH/1.D-8/ IS AN OLD MACHINE ACCURACY  
+!
+!         
+!     DENOM(K)=1.0D0/(FAC(I1)*FAC(I2)*FAC(I3)) 
+!                where I1=I, I2=NN-I+1, I3=NN+M-I 
+!     not the same as denom1(iden) in dlmsf2in3!!!
 C--------/---------/---------/---------/---------/---------/---------/--  
       IMPLICIT NONE 
 C  
@@ -135,17 +140,22 @@ C
   4   CONTINUE
       NNDLM=(LMAX+1)*(2*LMAX+1)        !The number of DLM \neq 0  
         
-      DO 5 I=1,NNDLM  
-       DLM(I)=CZERO 
-  5   CONTINUE 
+
+      DLM=CZERO
+!old
+!      DO 5 I=1,NNDLM  
+!       DLM(I)=CZERO 
+!  5   CONTINUE 
 C  
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C                             DLM1
 C     DLM1, THE  SUM  OVER  RECIPROCAL   LATTICE  VECTORS, IS  
-C     CALCULATED FIRST. THE PREFACTOR P1 IS  TABULATED  FOR EVEN  
-C     VALUES OF L+|M|, THUS LM=(00),(11),(2 0),(22),(2*LMAX,2*LMAX)  
-C     THE  FACTORIAL  FACTOR  F1  IS SIMULTANEOUSLY TABULATED IN  
-C     DENOM, FOR ALL VALUES OF N=0,(L-|M|)/2  
+C     CALCULATED FIRST. 
+!
+!     THE PREFACTOR PREF IS  TABULATED  FOR EVEN  
+C     VALUES OF L+|M|, THUS LM=(00),(11),(2 0),(22),(2*LMAX,2*LMAX)
+!  
+C     THE  FACTORIAL FACTOR F1 IS TABULATED IN DENOM, FOR ALL VALUES OF N=0,(L-|M|)/2  
 C  
       K=1  
       KK=1  
@@ -158,68 +168,84 @@ C
        AP2=AP2+2.0D0     !=2*L-1
        CP=CF  
        MM=1  
-       IF(MOD  (L,2))7,6,7  
+
+       IF(MOD(L,2))7,6,7  
    6   MM=2  
        CP=CI*CP  
-   7   NN=(L-MM)/2+2  
+   7   NN=(L-MM)/2+2        !L-MM even here
 *
-        DO 8 M=MM,L,2  
-        J1=L+M-1  
-        J2=L-M+1  
+        DO 8 M=MM,L,2       !MM=1 or 2 depending on L odd/even
+        J1=L+M-1            !=1 for L=M=1
+        J2=L-M+1            !=1 for L=M=1  
+
         AP=AP1*SQRT(AP2*FAC(J1)*FAC(J2))  
         PREF(KK)=AP*CP  
+
         CP=-CP  
         KK=KK+1  
-        NN=NN-1  
+        NN=NN-1             !=(L-MM)/2+1
 *
-         DO 8 I=1,NN  
+         DO 8 I=1,NN        !n-summation for DL1 in JPA39 eq 85
          I1=I  
-         I2=NN-I+1  
-         I3=NN+M-I  
+         I2=NN-I+1          !I2=I3=(L-MM)/2+1  for M=I=1
+         I3=NN+M-I 
+ 
          DENOM(K)=1.0D0/(FAC(I1)*FAC(I2)*FAC(I3))  
+
          K=K+1 
+
   8   CONTINUE 
 C
 C     THE  RECIPROCAL  LATTICE IS  DEFINED BY  B1, B2. THE  SUMMATION  
 C     BEGINS WITH THE ORIGIN POINT OF THE LATTICE, AND  CONTINUES IN  
 C     STEPS OF 8*N1 POINTS, EACH  STEP INVOLVING THE  PERIMETER OF A  
 C     PARALLELOGRAM OF LATTICE POINTS ABOUT THE ORIGIN, OF SIDE 2*N1+1  
-C     EACH STEP BEGINS AT LABEL 9.  
-C     AKPT=THE CURRENT LATTICE VECTOR IN THE SUM  
+C     EACH STEP BEGINS AT LABEL 9
+!     AKPT=THE CURRENT LATTICE VECTOR IN THE SUM  
 C  
       TEST1=1.0D6  
       II=1  
+
+! Setting counter N1 for the reciprocal lattice summation:
       N1=-1  
-   9  N1=N1+1  
+   9  N1=N1+1       !loop counter
+ 
       NA=N1+N1+II  
       AN1=DBLE(N1)  
       AN2=-AN1-1.0D0  
       DO 22 I1=1,NA  
-      AN2=AN2+1.0D0  
+      AN2=AN2+1.0D0 
+ 
       DO 21 I2=1,4  
 C     WRITE(16,307) I1,I2  
 C 307 FORMAT(33X,'I1=',I2,' , I2=',I2/33X,12('='))  
       AN=AN1  
       AN1=-AN2  
       AN2=AN  
+
+!Set dual lattice vector \vg:
       AB1=AN1*B1(1)+AN2*B2(1)  
-      AB2=AN1*B1(2)+AN2*B2(2)  
+      AB2=AN1*B1(2)+AN2*B2(2) 
+
+!Set \vK_parallel: 
       AKPT(1)=AK(1)+AB1  
       AKPT(2)=AK(2)+AB2  
-C  
+C 
 C     FOR  EVERY LATTICE VECTOR OF THE SUM, THREE SHORT ARRAYS ARE  
-C     INITIALISED AS BELOW. AND USED AS TABLES:  
-C     XPM(M) CONTAINS VALUES OF XPK**|M|  
-C     AGK(I) CONTAINS VALUES OF (AC/KAPPA)**I  
-C     GKN(N) CONTAINS VALUES OF (GP/KAPPA)**(2*N-1)*GAM(N,Z)  
-C     WHERE L=0,2*LMAX;M=-L,L;N=0,(L-|M|)/2;I=L-2*N  
-C     GAM IS THE INCOMPLETE GAMMA FUNCTION, WHICH IS CALCULATED BY  
-C     RECURRENCE  FROM  THE VALUE  FOR N=0, WHICH  IN TURN CAN  BE  
-C     EXPRESSED IN TERMS OF THE COMPLEX ERROR FUNCTION CERF  
-C     AC=MOD(AKPT). NOTE SPECIAL ACTION IF AC=0  
-C  
-      ACSQ=AKPT(1)*AKPT(1)+AKPT(2)*AKPT(2)  
-      GPSQ=KAPSQ-ACSQ 
+C     INITIALISED AS BELOW. AND USED AS TABLES: 
+! 
+!     XPM(M) CONTAINS VALUES OF XPK**|M|  
+!     AGK(I) CONTAINS VALUES OF (AC/KAPPA)**I  
+!     GKN(N) CONTAINS VALUES OF (GP/KAPPA)**(2*N-1)*GAM(N,Z)  
+!     WHERE L=0,2*LMAX;M=-L,L;N=0,(L-|M|)/2;I=L-2*N  
+!     GAM IS THE INCOMPLETE GAMMA FUNCTION, WHICH IS CALCULATED BY  
+!     RECURRENCE  FROM  THE VALUE  FOR N=0, WHICH  IN TURN CAN  BE  
+!     EXPRESSED IN TERMS OF THE COMPLEX ERROR FUNCTION CERF  
+!     AC=MOD(AKPT). NOTE SPECIAL ACTION IF AC=0  
+ 
+      ACSQ=AKPT(1)*AKPT(1)+AKPT(2)*AKPT(2)  !K_\parallel^2
+      GPSQ=KAPSQ-ACSQ                       !K_\perp^2
+
       IF(ABS(GPSQ).LT.EMACH*EMACH)   THEN 
       WRITE(7,100) 
   100 FORMAT(13X,'FATAL ERROR FROM XMAT:'/3X,'GPSQ IS TOO SMALL.' 
@@ -229,77 +255,105 @@ C
      & /3X,'IN THE FREQUENCY OR WAVELENGTH VALUE.') 
       STOP 
       ENDIF 
-      AC=SQRT(ACSQ)  
-      GP=SQRT(GPSQ)  
+
+      AC=SQRT(ACSQ)       !K_\parallel; always real number
+      GP=SQRT(GPSQ)       !K_\perp; complex in general
+
       XPK=CZERO  
       GK=CZERO  
       GKK=DCMPLX(1.0D0,0.0D0)  
-      IF(AC-EMACH)11,11,10  
-  10  XPK=DCMPLX(AKPT(1)/AC,AKPT(2)/AC)  
-      GK=AC/KAPPA  
-      GKK=GPSQ/KAPSQ  
+
+      IF(AC-EMACH) 11,11,10  
+
+  10  XPK=DCMPLX(AKPT(1)/AC,AKPT(2)/AC)    !\vK_parallel/K_\parallel
+      GK=AC/KAPPA                          !K_\parallel/\sigma
+      GKK=GPSQ/KAPSQ                       !K_\perp^2/\sigma^2
   11  XPM(1)=DCMPLX(1.0D0,0.0D0)  
+*
       AGK(1)=DCMPLX(1.0D0,0.0D0)  
 *
       DO 12 I=2,LL2  
-      XPM(I)=XPM(I-1)*XPK  
-      AGK(I)=AGK(I-1)*GK  
+      XPM(I)=XPM(I-1)*XPK         !XPK**(I-1)
+      AGK(I)=AGK(I-1)*GK          !GK**(I-1)
   12  CONTINUE 
-*
-      CF=KAPPA/GP  
-      ZZ=-ALPHA*GKK  
+
+! Initialize gamfn(0) for recurrence [Eq. (42) of Ka2; JPA39 eq. 88] 
+! beginning with b=-1/2:
+      CF=KAPPA/GP                      !\sigma/K_\perp
+      ZZ=-ALPHA*GKK                    !-ALPHA*K_\perp^2/\sigma^2  
       CZ=SQRT(-ZZ)  
       Z=-CI*CZ  
       CX=EXP(-ZZ)  
       GAM=RTPI*CERF(CZ,EMACH)  
       GKN(1)=CF*CX*GAM  
       BT=Z  
+
       B=0.5D0  
       LLL=LMAX+1  
-*
+
+! recurrence [Eq. (42) of Ka2; JPA39 eq. 88] 
       DO 13 I=2,LLL 
       BT=BT/ZZ 
       B=B-1.0D0  
       GAM=(GAM-BT)/B 
-      CF=CF*GKK  
+      CF=CF*GKK 
+ 
       GKN(I)=CF*CX*GAM  
+
   13  CONTINUE 
 C  
 C     THE CONTRIBUTION TO THE SUM DLM1 FOR A PARTICULAR  
 C     RECIPROCAL LATTICE VECTOR IS NOW ACCUMULATED INTO  
-C     THE  ELEMENTS OF DLM, NOTE SPECIAL ACTION IF  AC=0  
+C     THE ELEMENTS OF DLM, NOTE SPECIAL ACTION IF AC=0  
 C  
       K=1  
       KK=1  
 *
       DO 19 L=1,LL2  
       MM=1  
-      IF(MOD  (L,2))15,14,15  
+      IF(MOD(L,2)) 15,14,15  
   14  MM=2  
   15  N=(L*L+MM)/2  
       NN=(L-MM)/2+2  
-      DO 19 M=MM,L,2  
+      DO 19 M=MM,L,2          !MM=1 or 2 depending on L odd/even
       ACC=CZERO  
       NN=NN-1  
       IL=L  
 *
-       DO 16 I=1,NN  
+       DO 16 I=1,NN           !=(L-MM)/2+1
+
        ACC=ACC+DENOM(K)*AGK(IL)*GKN(I)  
+
        IL=IL-2  
        K=K+1  
   16   CONTINUE 
+
        ACC=PREF(KK)*ACC  
-       IF(AC-1.0D-6)17,17,165  
- 165   DLM(N)=DLM(N)+ACC/XPM(M)  
-       IF(M-1)17,18,17  
+
+! PREF(KK)=AP*CP where AP=AP1*SQRT(AP2*FAC(J1)*FAC(J2)), CP=CI/KAPPA, +/- 1/KAPPA,
+! AP1=-1.d0/(TV*2.0D0**(l-1)) with TV being unit cell area, and 
+! AP2=2*L-1, J1=L+M-1, J2=L-M+1
+
+       IF(AC-1.0D-6) 17,17,165  
+
+ 165   DLM(N)=DLM(N)+ACC/XPM(M) 
+ 
+       IF(M-1)17,18,17 
+ 
   17   NM=N-M+1  
-       DLM(NM)=DLM(NM)+ACC*XPM(M)  
+
+       DLM(NM)=DLM(NM)+ACC*XPM(M) 
+
+!XPM(I)=XPK**(I-1) 
+
   18   KK=KK+1  
        N=N+1  
   19  CONTINUE 
 *
-      IF(II)21,21,22  
-  21  CONTINUE  
+      IF(II)21,21,22 
+ 
+  21  CONTINUE   !I2 summation
+ 
   22  II=0  
 C  
 C     AFTER EACH STEP OF THE SUMMATION A TEST ON THE  
