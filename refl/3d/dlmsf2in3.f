@@ -333,7 +333,9 @@ c
       phim(-m)=phim(1-m)*phi 
       enddo
 c 
-c----- calculate the incomplete gamma functn gamfn
+c----- calculate the incomplete gamma functn gamfn by recurrence
+!      where the recurrence intial values are determined with the help
+!      of the Faddeeva complex error function w(z) supplied by CERF
 c      note this is limit of delta as cz->0
 
 ! Set the second argument of gamfn in JPA39 eq. 85:
@@ -341,26 +343,30 @@ c      note this is limit of delta as cz->0
                                       !=x of (A.3.1) of Ka3
 
 
-      crtx_if: if (dble(cx).ge.0.) then                   !cf. (A.3.6) of Ka3
+      crtx_if: if (dble(cx).ge.0.) then          !cf. (40) of Ka2; (A.3.6) of Ka3
 
-!K_perp purely imaginary and the argument of cerf=w(ci*sqrt(cx))
-!is sqrt(|cx|)
+!K_perp purely imaginary, cx positive real, and arg cx=0.
+! Hence crtx in the argument ci*crtx of the Faddeeva complex error function is
 
         crtx=sqrt(cx)
 
       else   !dble(cx)<0.
 
-!K_perp purely real and the argument of cerf
-!is -ci*sqrt(|cx|), because cx=e^{-i\pi}*K_perp^2*\eta/2.d0
+!K_perp purely real, cx=e^{-i\pi}*K_perp^2*\eta/2.d0 negative real,
+!and arg cx=-\pi. Hence crtx in the argument ci*crtx of the Faddeeva complex error
+!function in (A9) of Ka2 is then
 
-        crtx=-(0.d0,1.d0)*sqrt(-cx)
+       crtx=-(0.d0,1.d0)*sqrt(-cx)
+
+!implying the argument of the Faddeeva complex error
+!function to be areal positive sqrt(-cx)
 
       end if crtx_if
 
 c      write(6,*)'sqrt(-cx)=',sqrt(-cx)
 *
 ! Prepare recurrence in JPA39 eq. 88
-! Initialize gamfn(0):
+! Initialize gamfn(0) by the Faddeeva complex error function:
 
       f1=exp(-cx)
       gamfn(0)=rtpi*f1*cerf((0.d0,1.d0)*crtx,emach)    !cf. (A9) of Ka2
