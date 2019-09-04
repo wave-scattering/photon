@@ -377,17 +377,20 @@ c      write(6,*)'sqrt(-cx)=',sqrt(-cx)
 ! The range of b is -1/2,-3/2,-5/2, ... which are all negative numbers
 ! To this range of b corresponds afac= 1/2,3/2,5/2, ...
 ! of opposite sign which has the effect to change the signs on the rhs of
-! gamma recurrence in JPA39 eq 85
-
-      do n=0,lmax-1  
-      fac=fac/cx       ![-(0.d0,1.d0)*sqrt(-cx)]/cx**(n+1)
-      gamfn(n+1)=(fac*f1-gamfn(n))/afac                                      
+! gamma recurrence in JPA39 eq 88
+!
+! The recurrence (88) of JPA2006 with b=-afac:
+      do n=0,lmax-1
+      fac=fac/cx                              !crtx/cx**(n+1)
+      gamfn(n+1)=(fac*f1-gamfn(n))/afac       !afac=-b in analytic formulas
       afac=afac+1.d0   
       enddo                    !Kambe's Gamma calculated 
 c   
 c                                                                        
 c----- set up delta(n) the generalisation of gamfn(n) for non coplanar
-c      layers.  
+c      layers (the latter are the layers which scatteres z-coordinates
+!      overlap in the stacking direction along the z-axis - cf. &3 of Ka3)
+!      This is only relevant for a complex lattice if natl(lay)>1
 c
       ifl=0
 *
