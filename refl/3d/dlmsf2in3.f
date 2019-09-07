@@ -962,7 +962,7 @@ c
       lm=lm+1
       if (islmev) lmeven=lmeven+1
       const=-sqrt((l+l+1)*fctrl(l+m)*fctrl(l-m))/(2**l)   !checked  that it divides by 2
-      pref1(lm)=const*im(m)/area
+      pref1(lm)=const*im(-abs(m))/area
 *
       if (islmev) then
 
