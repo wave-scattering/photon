@@ -16,14 +16,17 @@ c      the restriction l-abs(m) = even integer need no longer hold.
 c      (1) dlm1 the reciprocal space summation
 c      (2) dlm2 the real space summation
 c      (3) dlm3 term added to l=m=0, i=j structure constant
-c     (DL1 has correct factor i^{1-m} instead of i^{1+|m|} in Kambe)
+!
+!  Depending on the chosen spherical harmonics, DL1 may have the
+!  prefactor i^{1+m} in the Condon-Shortley convention, or i^{1+|m|} in Kambe's
+!  convention
 c 
 c      set up for n atoms per unit cell by j.m.maclaren                   
 c      october/1987 
 c
 c      cx lines are those suppressed of the original program  
 c
-c    The output (in diagonal case) coincides with that of DLSUMF2IN3   
+c     The output (in diagonal case) coincides with that of DLSUMF2IN3
 c----- 
 c      
 *  !!!  Compared to (4.72) of {Pe} or (48) of Ka2, (3.20) of Ka3 !!! 
@@ -49,7 +52,8 @@ c -----
 c 
 c Given the cutoff lmax on the order of scattering matrices, the DL
 c constants have to be calculated with the cutoff 2*lmax
-c                                                    
+c
+!   csigma ... complex energy (because of in general complex dielectric function)
 c   NATL  ... number of atoms in a layer
 c   POS   ... position of the atoms in the unit cell read as
 c                       (z,x,y) and scaled by spa
@@ -82,6 +86,8 @@ C   DTHR  ... required % precision of DL's calculation
 !
 !   dlm1(lm,1)= \sum acc*phase*phim(m)*pref1(lm)/ka
 !
+!   Q0 ... fixed Ewald parameter
+!   ALPHA ... dynamically assigned Ewald parameter as in (41) of Kam2 or (4.73) of Pendry
 !  ==================
 !   Preset in dlmset:
 !
@@ -131,8 +137,8 @@ cx    ,lpr
      2 rjz,xetest,gamma
 c DTHR,testp,diff,
       complex*16, intent(in) :: csigma
-      complex*16 ka,ka2,alpha,rtal,kaz,kaz2,f1,f2,f3,fac,phi,cz2,phase,
-     1 il,ilm1,ilp1,acc,acccop,sums,cx,cz,crtx,sth,cth,cerff2,
+      complex*16 ka,ka2,alpha,al,rtal,kaz,kaz2,f1,f2,f3,fac,phi,cz2,
+     1 phase,il,ilm1,ilp1,acc,acccop,sums,cx,cz,crtx,sth,cth,cerff2,
      2 cerff3,zdl1,zdl2
 ! 
 !     LOCAL ARRAYS
@@ -141,7 +147,7 @@ c DTHR,testp,diff,
 cx     1 ,isym(laytm),nsk(npm),nsr(npm)
 
       real*8, intent(in) :: ak(2)
-      real*8 ar1(2),ar2(2),arv(2,2),b1(2),b2(2),bv(2,2),tau(2),
+      real*8 area,ar1(2),ar2(2),arv(2,2),b1(2),b2(2),bv(2,2),tau(2),
      1 pos(3,natlm,laytm),denom1(lmxm3),fctrl(0:4*lmaxd),rv(2,nrmax),
      2 kv(2,nkmax),xtol(ndlmm,nfm),xxtol(ndlmm,nfm)
 
@@ -164,6 +170,7 @@ c      common /recip/  nsk,nnsk   ! used  but never set
 c      common /struct/ nsr,nnsr  !used but never set
       common/x1/      ar1,ar2         !direct lattice basis vectors
       common/xin/     b1,b2           !reciprocal lattice basis vectors
+      common/xar/     area
 c  
 c----- initialise constants 
 c
@@ -278,15 +285,25 @@ cx      else
 c                                                                           
 c----- separation constant alpha defined in leed by j.b. pendry
 c   
-      ka2=csigma**2  !+(0.d0,1.d0)*emach    !ka2 should be sigma**2
-      ka=sqrt(ka2)                          !hence ka should be sigma
+      ka2=csigma**2  !+(0.d0,1.d0)*emach    !ka2 should be csigma**2
+      ka=sqrt(ka2)                          !hence ka should be csigma
       alpha=ka2*q0/2.d0
       rtal=sqrt(alpha)
+
+! from multem xmat:
+!     area=ABS(AR1(1)*AR2(2)-AR1(2)*AR2(1))
+!      ALPHA=ka2*area/(4.0_dp*PI)
+!      ALPHA=1.1404165905492607d0  !TODO temporary only for check
+!      AL=ABS(ALPHA)
+
+!     IF(EXP(AL)*EMACH-5.0D-5)5,5,4
+!   4  AL=LOG(5.0D-5/EMACH)
+!   5  ALPHA=cmplx_dp(AL,0.0_dp)
 c
-c  alpha=|sigma**2*area/(pi+pi+pi+pi)| in leed by j.b. pendry 
+c  alpha=|csigma**2*area/(pi+pi+pi+pi)| in leed by j.b. pendry
 c                                  (see Eq. (4.73), p. 137 there)
 c  corresponds to the choice of
-c      alpha=sigma**2*eta/2 = sigma**2*area/(pi+pi+pi+pi)
+c      alpha=csigma**2*eta/2 = csigma**2*area/(pi+pi+pi+pi)
 c      (see Eq. (4.73), p. 137 in leed by j.b. pendry)
 c  
 ************************************************************************
@@ -319,7 +336,7 @@ cx      if (j1.eq.nk) lpr=.true.
       gky=aky+kv(2,ib)            !aky ... y-component of Bloch// 
       gkp2=gkx*gkx+gky*gky
       gkp=sqrt(gkp2)              !K_\parallel
-      kaz2=ka2-gkp2               !ka2 ... sigma**2
+      kaz2=ka2-gkp2               !ka2 ... csigma**2
       kaz=sqrt(kaz2)              !kaz ... K_perp
 c 
 c----- set up exp(-i*m*phi(K//))  
@@ -352,14 +369,14 @@ c      note this is limit of delta as cz->0
 
       else   !dble(cx)<0.
 
-!K_perp purely real, cx=e^{-i\pi}*K_perp^2*\eta/2.d0 negative real,
+!K_perp purely positive real, cx=e^{-i\pi}*K_perp^2*\eta/2.d0 negative real,
 !and arg cx=-\pi. Hence crtx in the argument ci*crtx of the Faddeeva complex error
 !function in (A9) of Ka2 is then
 
        crtx=-(0.d0,1.d0)*sqrt(-cx)
 
 !implying the argument of the Faddeeva complex error
-!function to be areal positive sqrt(-cx)
+!function to be a real positive sqrt(-cx)
 
       end if crtx_if
 
@@ -564,9 +581,12 @@ c Summary:
 *    acc=\sum_n\sum_s delta(n,ifl)*kazbka(2*n-1)*sums for noncoplanar
 *    phase=e^{i(k_//+k_s).a_//}=e^{iK_//.a_//} ... ==1 for a simple Bravais lattice
 *    phim(m)=e^{-im\phi_{K//}}
-*    pref1(lm)=-2^{-l}*sqrt((2*l+1)*fctrl(l+m)*fctrl(l-m))*i^{1-m}/area
+*    pref1(lm)=-2^{-l}*sqrt((2*l+1)*fctrl(l+m)*fctrl(l-m))*i^{1+|m|}/area
 * ===>
-*       dlm1 has factor i^{1-m} instead of i^{1+|m|} in Kambe 
+!  Depending on the chosen spherical harmonics, DL1 may have the
+!  prefactor i^{1+m} in the Condon-Shortley convention, or i^{1+|m|} in Kambe's
+!  convention
+*
 *  Compared to the LEED, its additional (1/sigma)-factor is corrected for
 c
 * if convergence test is on:
@@ -1060,42 +1080,46 @@ c
       ylm(1)=sqrt(pii4)
       if (lmax.eq.0) return
 c
-c----- set ylm (m=l,m=l-1) using explicit expressions (a.16) and (a.17)
-c----- sets also ylm (lm=m=-l,lm+1=m=-l+1)
+c----- set ylm (lm=ll and l,l-1) and also ylm (lm=l,-l, and lm+1=l,-l+1)
+!      using explicit expressions (a.16), (a.17), and (a.12-3)
+c-----
       a=1.d0
       b=1.d0
       asg=1.d0
       sf=1.d0
       sa=1.d0
-      lp=1     !loop counter
+      lp=1
 
       lloop: do l=1,lmax
       fl=dble(l)
-      a=0.5d0*a*fl*(2.d0*fl-1.d0)
-      b=fl*b
-      asg=-asg
+      a=0.5d0*a*fl*(2.d0*fl-1.d0)   ![2l(2l-1)/2^2]*a
+      b=fl*b                        !=l!
+      asg=-asg           !=(-1)^l
       lm=lp+1            !>=2  (1,-1)
       lp=lp+l+l+1        !>=4  (11)
-      sf=sf*cf
+      sf=sf*cf           !exp(i*l*fi)
       fac=sqrt((2.d0*fl+1.d0)*a/(4.d0*pi*b*b))*sa
-      ylm(lm)=fac*st/sf
-      ylm(lp)=asg*fac*st*sf
+      ylm(lm)=fac*st/sf             !lm=(l,-l)
+      ylm(lp)=asg*fac*st*sf         !lm=(l,l)
+
       fac=sqrt(2.d0*fl)*fac*ct
       ylm(lm+1)=fac*cf/sf
+!      if ( (lm+1) /= (lp-1)) then
       ylm(lp-1)=-asg*fac*sf/cf  !??? for l=1, lm+1=lp-1=3  ??? TODO
+!      end if
       sa=sa*st
       enddo lloop
 c
       if (lmax.eq.1) return
 c 
-c----- set remaining ylm using recurrence relation in l (a.14)
+c----- set remaining ylm using l-recurrence relation in l (a.14)
 c
       do m=2,lmax
       mm=m+m-4
       fm=dble(m-2)
       a=sqrt(1.d0/(fm+fm+3.d0))
-      ln=m*m-1       !(m-1,m-1) element
-      lm=ln-m-m+2
+      ln=m*m-1       !(l-1,l-1) element
+      lm=ln-m-m+2    !(l-1)**2
 
       do l=m,lmax
       fl=dble(l)
