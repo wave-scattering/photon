@@ -50,9 +50,20 @@ c      common/xin/     b1,b2           !reciprocal lattice basis vectors
 c      common/xar/     area            !unit cell area
 c -----  
 c 
-c Given the cutoff lmax on the order of scattering matrices, the DL
-c constants have to be calculated with the cutoff 2*lmax
-c
+!   Given the cutoff lmax on the order of scattering matrices, the DL
+!   constants have to be calculated with the cutoff 2*lmax
+!   
+!   dlmsf2in3 limits the number of direct/dual lattice vectors used in Kambe summation 
+!   via parameter NRMAX/NKMAX which value is set at present to 300. 
+!   NRMAX/NKMAX is the upper bound for the routine
+!   latgen2d which, given the two lattice primitive vectors, generate the 
+!   lattice with closed shells having nr,nk vectors <= NRMAX,NKMAX. 
+!   In actual summation, the values nr and nk are used.
+!  
+!   In contrast, dlsumf2in3 of multem does not have a hard upper bound on the 
+!   number of lattice vectors used in Kambe summation. 
+!   It generates lattice vectors until convergence bounds are satisfied. 
+!
 !   csigma ... complex energy (because of in general complex dielectric function)
 c   NATL  ... number of atoms in a layer
 c   POS   ... position of the atoms in the unit cell read as
@@ -925,7 +936,7 @@ c
 c
 c
       subroutine dlmset(lmax)  
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc 
+c--------/---------/---------/---------/---------/---------/---------/--
 c
 c----- sets up energy & k// independent prefactors needed by dlmnew
 c Returns:
@@ -982,7 +993,7 @@ c
       lm=lm+1
       if (islmev) lmeven=lmeven+1
       const=-sqrt((l+l+1)*fctrl(l+m)*fctrl(l-m))/(2**l)   !checked  that it divides by 2
-      pref1(lm)=const*im(-abs(m))/area
+      pref1(lm)=const*im(m)/area       !const*im(-abs(m))/area   ... yields i**(1+|m|)
 *
       if (islmev) then
 

@@ -14,7 +14,7 @@ C     AK(1), AK(2): THE X  AND Y COMPONENTS OF THE  MOMENTUM PARALLEL
 C                   TO THE SURFACE, REDUCED TO THE 1ST BRILLOUIN ZONE
 C                   
 !     EMACH/1.D-8/ IS AN OLD MACHINE ACCURACY - TODO
-!
+!     PI/3.14159265358979D0 - TODO
 !         
 !     DENOM(K)=1.0D0/(FAC(I1)*FAC(I2)*FAC(I3)) 
 !                where I1=I, I2=NN-I+1, I3=NN+M-I 
@@ -23,6 +23,18 @@ C
 !     Following Kambi, the Faddeeva complex error function is used
 !     to generate the values of incomplete gamma function of complex
 !     argument in DL1 contribution
+!
+!     Initially the summation follows Kambe convention of spherical
+!     harmonics with e.g. i**(1+|m|) prefactor of DL1
+!
+!     At the very end FACTOR (-1.0D0)**((M+|M|)/2)=i**(M+|M|) is added after
+!     all three contributions DL1, DL2, DL3 are summed up together!!!
+!     Thereby the prefactor i**(1+abs(m)) of DL1 is converted into
+!
+!               i**(1+|m|+M+|M|)=(-1)**m i**(1+M)
+!
+!     Does the latter returns back to the Condon-Shortley convention
+!     of spherical harmonics???
 C--------/---------/---------/---------/---------/---------/---------/--  
       IMPLICIT NONE 
 C  
@@ -124,10 +136,13 @@ C     USED, SUBJECT TO A RESTRICTION WHICH IS IMPOSED TO CONTROL
 C     LATER ROUNDING ERRORS  
 C  
       ALPHA=TV/(4.0D0*PI)*KAPSQ            
-      AL=ABS(ALPHA)                        !Ewald parameter
-      IF(EXP(AL)*EMACH-5.0D-5)3,3,2  
+      AL=ABS(ALPHA) 
+                       !Ewald parameter
+
+      IF(EXP(AL)*EMACH-5.0D-5) 3,3,2  
    2  AL=LOG(5.0D-5/EMACH)  
    3  ALPHA=DCMPLX(AL,0.0D0)  
+
       RTA=SQRT(ALPHA) 
 C*********************************************************************** 
 C      F A C T O R I A L S    A N D   DLM   I N I T I A L I Z A T I O N
@@ -151,7 +166,7 @@ C
 !       DLM(I)=CZERO 
 !  5   CONTINUE 
 C  
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+!--------/---------/---------/---------/---------/---------/---------/--
 C                             DLM1
 C     DLM1, THE  SUM  OVER  RECIPROCAL   LATTICE  VECTORS, IS  
 C     CALCULATED FIRST. 
@@ -161,35 +176,41 @@ C     VALUES OF L+|M|, THUS LM=(00),(11),(20),(22),(2*LMAX,2*LMAX)
 !  
 C     THE  FACTORIAL FACTOR F1 IS TABULATED IN DENOM, FOR ALL VALUES OF N=0,(L-|M|)/2  
 C  
+!--------/---------/---------/---------/---------/---------/---------/--
+! Lattice vectors independent part
+! Determining the arrays
+! PREF(KK)=AP*CP comprising the i**(1+|m|) prefactor
+! DENOM(K)
+
       K=1  
       KK=1  
       AP1=-2.0D0/TV  
       AP2=-1.0D0  
       CF=CI/KAPPA  
 *
-      DO 8 L=1,LL2       !LL2=2*LMAX+1
+      DO L=1,LL2       !LL2=2*LMAX+1
        AP1=AP1/2.0D0     !=-1.d0/(TV*2.0D0**(l-1)) 
        AP2=AP2+2.0D0     !=2*L-1
-       CP=CF  
+       CP=CF             !hides i**(1+|m|) prefactor 
        MM=1  
-
-       IF(MOD(L,2))7,6,7  
+*
+       IF(MOD(L,2)) 7,6,7  
    6   MM=2  
        CP=CI*CP  
    7   NN=(L-MM)/2+2        !L-MM even here
 *
-        DO 8 M=MM,L,2       !MM=1 or 2 depending on L odd/even
+        DO M=MM,L,2         !MM=1 or 2 depending on L odd/even
         J1=L+M-1            !=1 for L=M=1
         J2=L-M+1            !=1 for L=M=1  
 
         AP=AP1*SQRT(AP2*FAC(J1)*FAC(J2))  
-        PREF(KK)=AP*CP  
+        PREF(KK)=AP*CP      !comprises i**(1+|m|) prefactor 
 
-        CP=-CP  
+        CP=-CP              !because loop step=2, mere sign change
         KK=KK+1  
         NN=NN-1             !=(L-MM)/2+1
 *
-         DO 8 I=1,NN        !n-summation for DL1 in JPA39 eq 85
+         DO I=1,NN        !n-summation for DL1 in JPA39 eq 85
          I1=I  
          I2=NN-I+1          !I2=I3=(L-MM)/2+1  for M=I=1
          I3=NN+M-I 
@@ -198,8 +219,13 @@ C
 
          K=K+1 
 
-  8   CONTINUE 
-C
+      end do  !M-loop
+      end do  !I-loop
+      end do  !L-loop
+
+!--------/---------/---------/---------/---------/---------/---------/--
+! Lattice vectors dependent part
+!
 C     THE  RECIPROCAL LATTICE IS  DEFINED BY B1, B2. THE  SUMMATION
 C     BEGINS WITH THE ORIGIN POINT OF THE LATTICE, AND CONTINUES IN
 C     STEPS OF 8*N1 POINTS, EACH  STEP INVOLVING THE PERIMETER OF A
@@ -218,10 +244,13 @@ C
       AN1=DBLE(N1)     !beginning from AN1=0
       AN2=-AN1-1.0D0   !beginning from AN2=-1
 
-      DO 22 I1=1,NA  
+! The dual lattice summation loop until convergence bounds are satisied
+!
+      DO 22 I1=1,NA   
       AN2=AN2+1.0D0    !beginning from AN2=0
  
-      DO 21 I2=1,4  
+      DO 21 I2=1,4 
+ 
 C     WRITE(16,307) I1,I2  
 C 307 FORMAT(33X,'I1=',I2,' , I2=',I2/33X,12('='))  
       AN=AN1  
@@ -252,7 +281,7 @@ C     INITIALISED AS BELOW. AND USED AS TABLES:
  
       ACSQ=AKPT(1)*AKPT(1)+AKPT(2)*AKPT(2)  !K_\parallel^2
       GPSQ=KAPSQ-ACSQ                       !K_\perp^2
-
+*
       IF(ABS(GPSQ).LT.EMACH*EMACH)   THEN 
       WRITE(7,100) 
   100 FORMAT(13X,'FATAL ERROR FROM XMAT:'/3X,'GPSQ IS TOO SMALL.' 
@@ -262,7 +291,7 @@ C     INITIALISED AS BELOW. AND USED AS TABLES:
      & /3X,'IN THE FREQUENCY OR WAVELENGTH VALUE.') 
       STOP 
       ENDIF 
-
+*
       AC=SQRT(ACSQ)       !K_\parallel; always real number
       GP=SQRT(GPSQ)       !K_\perp; complex in general
 
@@ -279,13 +308,16 @@ C     INITIALISED AS BELOW. AND USED AS TABLES:
 *
       AGK(1)=DCMPLX(1.0D0,0.0D0)  
 *
-      DO 12 I=2,LL2  
+      DO I=2,LL2  
       XPM(I)=XPM(I-1)*XPK         !XPK**(I-1)
       AGK(I)=AGK(I-1)*GK          !GK**(I-1)
-  12  CONTINUE 
+      end do
 
+!--------/---------/---------/---------/---------/---------/---------/--
 ! Initialize gamfn(0) for recurrence [Eq. (42) of Ka2; JPA39 eq. 88] 
-! beginning with b=-1/2:
+! beginning with b=-1/2
+! Results stored in array GKN(I)
+!--------/---------/---------/---------/---------/---------/---------/--
       CF=KAPPA/GP                      !\sigma/K_\perp
       ZZ=-ALPHA*GKK                    !-ALPHA*K_\perp^2/\sigma^2  
       CZ=SQRT(-ZZ)  
@@ -299,7 +331,7 @@ C     INITIALISED AS BELOW. AND USED AS TABLES:
       LLL=LMAX+1  
 
 ! recurrence [Eq. (42) of Ka2; JPA39 eq. 88] 
-      DO 13 I=2,LLL 
+      DO I=2,LLL 
       BT=BT/ZZ 
       B=B-1.0D0  
       GAM=(GAM-BT)/B 
@@ -307,8 +339,8 @@ C     INITIALISED AS BELOW. AND USED AS TABLES:
  
       GKN(I)=CF*CX*GAM  
 
-  13  CONTINUE 
-C  
+      end do 
+!--------/---------/---------/---------/---------/---------/---------/--  
 C     THE CONTRIBUTION TO THE SUM DLM1 FOR A PARTICULAR  
 C     RECIPROCAL LATTICE VECTOR IS NOW ACCUMULATED INTO  
 C     THE ELEMENTS OF DLM, NOTE SPECIAL ACTION IF AC=0  
@@ -316,38 +348,41 @@ C
       K=1  
       KK=1  
 *
-      DO 19 L=1,LL2  
+      DO L=1,LL2  
       MM=1  
+*
       IF(MOD(L,2)) 15,14,15  
   14  MM=2  
   15  N=(L*L+MM)/2  
+*
       NN=(L-MM)/2+2  
-      DO 19 M=MM,L,2          !MM=1 or 2 depending on L odd/even
+      DO M=MM,L,2          !MM=1 or 2 depending on L odd/even
       ACC=CZERO  
       NN=NN-1  
       IL=L  
 *
-       DO 16 I=1,NN           !=(L-MM)/2+1
+       DO I=1,NN           !=(L-MM)/2+1
 
        ACC=ACC+DENOM(K)*AGK(IL)*GKN(I)  
 
        IL=IL-2  
        K=K+1  
-  16   CONTINUE 
+       end do     !I-loop
 
        ACC=PREF(KK)*ACC  
 
 ! PREF(KK)=AP*CP where AP=AP1*SQRT(AP2*FAC(J1)*FAC(J2)), CP=CI/KAPPA, +/- 1/KAPPA,
 ! AP1=-1.d0/(TV*2.0D0**(l-1)) with TV being unit cell area, and 
 ! AP2=2*L-1, J1=L+M-1, J2=L-M+1
-
+*
        IF(AC-1.0D-6) 17,17,165  
 
  165   DLM(N)=DLM(N)+ACC/XPM(M) 
  
-       IF(M-1)17,18,17 
+       IF(M-1) 17,18,17 
  
   17   NM=N-M+1  
+*
 
        DLM(NM)=DLM(NM)+ACC*XPM(M) 
 
@@ -355,10 +390,10 @@ C
 
   18   KK=KK+1  
        N=N+1  
-  19  CONTINUE 
+       end do   !l-loop
 *
-      IF(II)21,21,22 
- 
+      IF(II) 21,21,22 
+* 
   21  CONTINUE   !I2 summation
  
   22  II=0  
@@ -368,24 +403,29 @@ C     CONVERGENCE  OF THE  ELEMENTS OF  DLM IS  MADE
 C  
       TEST2=0.0D0  
 *
-      DO 23 I=1,NNDLM  
+      DO I=1,NNDLM  
       DNORM=ABS(DLM(I))  
       TEST2=TEST2+DNORM*DNORM  
-  23  CONTINUE 
+      end do     !I-loop
 *
       TEST=ABS((TEST2-TEST1)/TEST1) 
-      TEST1=TEST2  
-      IF(TEST-0.001D0)27,27,24  
+      TEST1=TEST2 
+* 
+      IF(TEST-0.001D0) 27,27,24  
   24  IF(N1-10)9,25,25  
   25  WRITE(16,26)N1  
   26  FORMAT(29H**DLM1,S NOT CONVERGED BY N1=,I2)  
-      GOTO 285  
-  27  WRITE(16,28)N1  
+
+      GOTO 285    !successful exit
+
+  27  WRITE(16,28) N1  
+*
   28  FORMAT(25H DLM1,S CONVERGED BY N1 =,I2)  
 C     WRITE(16,250)DLM  
 C250  FORMAT(5H0DLM1,//,45(2E13.5,/))  
 C
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+
+!--------/---------/---------/---------/---------/---------/---------/--
 C                             DLM2
 C     DLM2, THE SUM OVER REAL SPACE LATTICE VECTORS, BEGINS WITH  
 C     THE ADJUSTMENT OF THE ARRAY PREF, TO CONTAIN VALUES OF THE  
@@ -395,25 +435,28 @@ C
       AP1=TV/(4.0D0*PI)  
       CF=KAPSQ/CI 
 * 
-      DO 31 L=1,LL2  
+      DO L=1,LL2  
       CP=CF  
       MM=1  
-      IF(MOD  (L,2))30,29,30  
+*
+      IF(MOD(L,2)) 30,29,30  
   29  MM=2  
       CP=-CI*CP  
   30  J1=(L-MM)/2+1  
+*
       J2=J1+MM-1  
       IN=J1+L-2  
       AP2=((-1.0D0)**IN)*AP1  
-      DO 31 M=MM,L,2  
+      DO M=MM,L,2  
       AP=AP2/(FAC(J1)*FAC(J2))  
       PREF(KK)=AP*CP*PREF(KK)  
       J1=J1-1  
       J2=J2+1  
       AP2=-AP2  
       CP=-CP  
-      KK=KK+1  
-  31  CONTINUE 
+      KK=KK+1 
+      enddo !M-loop  
+      enddo !L-loop 
 *
 C  
 C     THE SUMMATION PROCEEDS IN STEPS OF 8*N1 LATTICE POINTS  
@@ -439,9 +482,11 @@ C
        AR=SQRT(R(1)*R(1)+R(2)*R(2)) 
        XPK=DCMPLX(R(1)/AR,R(2)/AR)  
        XPM(1)=DCMPLX(1.0D0,0.0D0)  
-        DO 33 I=2,LL2  
+
+        DO I=2,LL2  
         XPM(I)=XPM(I-1)*XPK  
-  33    CONTINUE 
+        enddo !I-loop 
+
       AD=AK(1)*R(1)+AK(2)*R(2)  
       SD=EXP(-AD*CI)  
 C  
@@ -475,21 +520,24 @@ C
       CP=RTA  
       CF=DCMPLX(1.0D0,0.0D0)  
 *
-       DO 39 L=1,LL2  
-       MM=1  
-       IF(MOD  (L,2))35,34,35  
+       DO L=1,LL2  
+       MM=1 
+* 
+       IF(MOD(L,2)) 35,34,35  
   34   MM=2  
   35   N=(L*L+MM)/2 
 * 
-        DO 38 M=MM,L,2  
+        DO M=MM,L,2  
         ACC=PREF(KK)*U2*CF*SD  
         DLM(N)=DLM(N)+ACC/XPM(M)  
-        IF(M-1)36,37,36  
+*
+        IF(M-1) 36,37,36  
   36    NM=N-M+1  
         DLM(NM)=DLM(NM)+ACC*XPM(M)  
-  37    KK=KK+1  
+  37    KK=KK+1 
+* 
         N=N+1  
-  38    CONTINUE 
+        enddo !M-loop  
 *
        AL=AL+1.0D0  
        CP=CP/ALPHA  
@@ -497,7 +545,7 @@ C
        U1=U2  
        U2=U  
        CF=KANT*CF  
-  39   CONTINUE 
+       enddo !L-loop 
   40  CONTINUE  
 C  
 C     AFTER EACH STEP OF THE SUMMATION A TEST ON THE  
@@ -505,22 +553,26 @@ C     CONVERGENCE OF THE ELEMENTS OF DLM IS MADE
 C  
       TEST2=0.0D0  
 *
-      DO 41 I=1,NNDLM  
+      DO I=1,NNDLM  
       DNORM=ABS(DLM(I))  
       TEST2=TEST2+DNORM*DNORM  
-  41  CONTINUE 
-*
+      enddo !I-loop 
+
       TEST=ABS((TEST2-TEST1)/TEST1)  
       TEST1=TEST2  
-      IF(TEST-0.001D0)45,45,42  
+*
+      IF(TEST-0.001D0) 45,45,42  
   42  IF(N1-10)32,43,43  
   43  WRITE(16,44)N1  
-  44  FORMAT(31H0**DLM2,S NOT CONVERGED BY N1 =,I2)  
-      GOTO 465  
-  45  WRITE(16,46)N1  
+  44  FORMAT(31H0**DLM2,S NOT CONVERGED BY N1 =,I2) 
+ 
+      GOTO 465  !successful exit
+
+  45  WRITE(16,46) N1 
+* 
   46  FORMAT(24H DLM2,S CONVERGED BY N1=,I2)  
 
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+!--------/---------/---------/---------/---------/---------/---------/--
 C                              DLM3 
 C     THE TERM DLM3 HAS A NON-ZERO CONTRIBUTION  ONLY  
 C     WHEN L=M=0.IT IS EVALUATED HERE IN TERMS OF THE  
@@ -532,134 +584,136 @@ C
       AP=-0.5D0/RTPI  
       DLM(1)=DLM(1)+AP*ACC  
 
-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+!--------/---------/---------/---------/---------/---------/---------/--
 C                          RESCALLING
 C     FINALLY THE ELEMENTS OF DLM ARE MULTIPLIED BY THE  
 C     FACTOR (-1.0D0)**((M+|M|)/2)  
 C
 *  
-      DO 47 L=2,LL2,2  
+      DO L=2,LL2,2  
       N=L*L/2+1  
-      DO 47 M=2,L,2  
+      DO M=2,L,2  
       DLM(N)=-DLM(N)  
-      N=N+1  
-  47  CONTINUE 
+      N=N+1 
+      enddo !M-loop  
+      enddo !L-loop 
 *
 C     WRITE(16,251) DLM  
 C 251 FORMAT(15H0DLM1+DLM2+DLM3,//45(2E13.5,/))  
 C  
 
       RETURN  
-      END  
+      end subroutine dlsumf2in3
 
-C=======================================================================  
+!--------/---------/---------/---------/---------/---------/---------/--
+
       FUNCTION CERF(Z,EMACH)  
-      IMPLICIT NONE 
-C     ------------------------------------------------------------------  
-C     GIVEN COMPLEX ARGUMENT Z, PROVIDES THE FADDEEVA
-C     COMPLEX ERROR FUNCTION (Eq. (7.2.3) of \ct{Ol}):
+!--------/---------/---------/---------/---------/---------/---------/--  
+C     GIVEN COMPLEX ARGUMENT Z, PROVIDES THE FADDEEVA 
+C     COMPLEX ERROR FUNCTION (Eq. (7.2.3) of \ct{Ol}): 
 !
 !     W(Z)=EXP(-Z**2)*(1.0-ERF(-I*Z))  ... 7.1.3 AS; 7.2.3 Ol
 !
 C     THE EVALUATION ALWAYS TAKES  PLACE IN THE FIRST QUADRANT.
-C     ONE OF THREE METHODS IS EXPLOYED DEPENDING ON THE SIZE OF THE
+C     ONE OF THREE METHODS IS EXPLOYED DEPENDING ON THE SIZE OF THE 
 C     ARGUMENT (A POWER SERIES,A RECURRENCE BASED ON CONTINUED FRACTIONS
-C     THEORY, OR AN ASYMPTOTIC SERIES).
+C     THEORY, OR AN ASYMPTOTIC SERIES). 
 !
 !     EMACH IS THE OLD MACHINE ACCURACY - TODO
 !
-!     THE ARGUMENT IS TRANSLATED TO THE FIRST QUADRANT FROM
-!     THE NN_TH QUADRANT, BEFORE THE METHOD FOR THE FUNCTION
+!     THE ARGUMENT IS TRANSLATED TO THE FIRST QUADRANT FROM  
+!     THE NN_TH QUADRANT, BEFORE THE METHOD FOR THE FUNCTION  
 !     EVALUATION IS CHOSEN
-!     SYMMETRY RELATIONS ARE NOW USED TO TRANSFORM THE FUNCTION
-!     BACK TO QUADRANT NN
+!     SYMMETRY RELATIONS ARE NOW USED TO TRANSFORM THE FUNCTION  
+!     BACK TO QUADRANT NN 
 !
 !     AS = ABRAMOWITZ AND STEGUN HANDBOOK OF MATHEMATICAL FUNCTIONS
 !     Ol = Olver NIST HANDBOOK OF MATHEMATICAL FUNCTIONS at https://dlmf.nist.gov
-C     ------------------------------------------------------------------
+C     ------------------------------------------------------------------  
+C  
+C ..  SCALAR ARGUMENTS  ..  
 C
-C ..  SCALAR ARGUMENTS  ..
-C
+      IMPLICIT NONE   
       REAL*8, intent(in) :: EMACH
-      COMPLEX*16, intent(in) :: Z
-C
-C ..  LOCAL SCALARS  ..
-C
-      INTEGER    NN,N
-      REAL*8     ABSZ,ABTERM,API,EPS,FACT,FACTD,FACTN,PI
-      REAL*8     Q,RTPI,TEST,X,Y,YY
-      COMPLEX*16 ZZ,CONE,CI,CZERO,SUM,ZZS,XZZS,CER,CERF
-      COMPLEX*16 H1,H2,H3,U1,U2,U3,TERM1,TERM2
-C
-C ..  INTRINSIC FUNCTIONS  ..
-C
-*     INTRINSIC DCMPLX,EXP,DCONJG
-C
-C ..  DATA STATEMENTS  ..
-C
-      DATA PI/3.14159265358979D0/
-      DATA CONE/(1.D0,0.D0)/,CI/(0.D0,1.D0)/,CZERO/(0.D0,0.D0)/
-C     ------------------------------------------------------------------
-C
-      EPS=5.0D0*EMACH
-      API=1.0D0/PI
+      COMPLEX*16, intent(in) :: Z  
+C  
+C ..  LOCAL SCALARS  ..  
+C  
+      INTEGER    NN,N 
+      REAL*8     ABSZ,ABTERM,API,EPS,FACT,FACTD,FACTN,PI  
+      REAL*8     Q,RTPI,TEST,X,Y,YY  
+      COMPLEX*16 ZZ,CONE,CI,CZERO,SUM,ZZS,XZZS,CER,CERF   
+      COMPLEX*16 H1,H2,H3,U1,U2,U3,TERM1,TERM2  
+C  
+C ..  INTRINSIC FUNCTIONS  ..  
+C  
+*     INTRINSIC DCMPLX,EXP,DCONJG  
+C  
+C ..  DATA STATEMENTS  ..  
+C  
+      DATA PI/3.14159265358979D0/  
+      DATA CONE/(1.D0,0.D0)/,CI/(0.D0,1.D0)/,CZERO/(0.D0,0.D0)/  
+C     ------------------------------------------------------------------  
+C  
+      EPS=5.0D0*EMACH  
+      API=1.0D0/PI 
 
 ! the Faddeeva complex error function part:
 
-      IF(ABS(Z))2,1,2
+      IF(ABS(Z))2,1,2  
    1  CERF=CONE         !special value for z==0
       GOTO 29
-
+      
 !     Herein below z/=0
 !     THE ARGUMENT Z/=0 IS TRANSLATED FROM THE NN_TH QUADRANT INTO ZZ
 !     IN THE FIRST QUADRANT, BEFORE THE METHOD FOR THE
-!     Faddeeva complex error function EVALUATION IS CHOSEN
-C
-   2  X=DBLE(Z)
-      Y=DIMAG(Z)
-      YY=Y
-      IF(Y)6,3,3
-   3  IF(X)5,4,4
-   4  ZZ=Z
-      NN=1
-      GOTO 9
-   5  ZZ=DCMPLX(-X,Y)
-      NN=2
-      GOTO 9
-   6  YY=-Y
-      IF(X)7,8,8
-   7  ZZ=-Z
-      NN=3
-      GOTO 9
-   8  ZZ=DCMPLX(X,-Y)
-      NN=4
-   9  ZZS=ZZ*ZZ
-      XZZS=EXP(-ZZS)
-      ABSZ=ABS(ZZ)
-      IF(ABSZ-10.0D0)10,10,23
-  10  IF(YY-1.0D0)11,12,12
-  11  IF(ABSZ-4.0D0)13,18,18
-  12  IF(ABSZ-1.0D0)13,18,18
-C
-! POWER SERIES (SEE 7.1.5 AS, p. 297; 7.6.1 Ol)
+!     Faddeeva complex error function EVALUATION IS CHOSEN 
+C  
+   2  X=DBLE(Z)  
+      Y=DIMAG(Z)  
+      YY=Y  
+      IF(Y)6,3,3  
+   3  IF(X)5,4,4  
+   4  ZZ=Z  
+      NN=1  
+      GOTO 9  
+   5  ZZ=DCMPLX(-X,Y)  
+      NN=2  
+      GOTO 9  
+   6  YY=-Y  
+      IF(X)7,8,8  
+   7  ZZ=-Z  
+      NN=3  
+      GOTO 9  
+   8  ZZ=DCMPLX(X,-Y)  
+      NN=4  
+   9  ZZS=ZZ*ZZ  
+      XZZS=EXP(-ZZS)  
+      ABSZ=ABS(ZZ)  
+      IF(ABSZ-10.0D0)10,10,23  
+  10  IF(YY-1.0D0)11,12,12  
+  11  IF(ABSZ-4.0D0)13,18,18  
+  12  IF(ABSZ-1.0D0)13,18,18  
+C  
+! POWER SERIES (SEE 7.1.5 AS, p. 297; 7.6.1 Ol) 
 ! In the series, n-th term for -iz is a z**2*(2n-1)/(n*(2n+1))
 ! multiple of the (n-1)-th term
 ! The overall prefactor of the series is -2*i/\sqrt{\pi} for (-iz)
 ! argument
 !
 ! One wonders why not the power series 7.1.8 AS, p. 297; 7.6.3 Ol
-! is being used?? The latter would lead directly
+! is being used?? The latter would lead directly 
 ! to the Faddeeva error function w(z)??? TODO
-C
+C  
   13  Q=1.0D0          !provides n!
-      FACTN=-1.0D0     !provides (2n-1)
-      FACTD=1.0D0      !provides (2n+1)
+      FACTN=-1.0D0     !provides (2n-1) 
+      FACTD=1.0D0      !provides (2n+1) 
       TERM1=ZZ         !==z**2  ... the first term of the sum for n=0
-      SUM=ZZ           !==z**2  ... the first term of the sum for n=0
+      SUM=ZZ           !==z**2  ... the first term of the sum for n=0 
 
-  14  DO N=1,5
-      FACTN=FACTN+2.0D0
-      FACTD=FACTD+2.0D0
+  14  DO N=1,5  
+      FACTN=FACTN+2.0D0  
+      FACTD=FACTD+2.0D0  
       FACT=FACTN/(Q*FACTD)  !=(2n-1)/(n*(2n+1))
 
       TERM1=FACT*ZZS*TERM1  !generates nth term from the (n-1)th term
@@ -667,51 +721,51 @@ C
 
       Q=Q+1.0D0
       enddo
+  
+      ABTERM=ABS(TERM1)  
+      IF(ABTERM-EPS)17,16,16  
+  16  IF(Q-100.0D0)14,17,17  
 
-      ABTERM=ABS(TERM1)
-      IF(ABTERM-EPS)17,16,16
-  16  IF(Q-100.0D0)14,17,17
-
-  17  FACT=2.0D0*SQRT(API)
-      SUM=FACT*CI*SUM       !adds the missing prefactor 2*i/\sqrt{\pi} for
+  17  FACT=2.0D0*SQRT(API)  
+      SUM=FACT*CI*SUM       !adds the missing prefactor 2*i/\sqrt{\pi} for 
                             !the (-iz) argument to provide -erf(-iz)
       CER=XZZS+XZZS*SUM     !generates Faddeeva error function w(z)
                             !according to 7.1.3 AS; 7.2.3 Ol
-      GOTO 24
-C
-C     CONTINUED FRACTION THEORY (W(Z) IS RELATED TO THE LIMITING
-C     VALUE OF U(N,Z)/H(N,Z), WHERE U AND H OBEY THE SAME
-C     RECURRENCE RELATION IN N. SEE FADDEEVA AND TERENTIEV
-C     (TABLES OF VALUES OF W(Z) FOR COMPLEX ARGUMENTS, PERGAMON
-C     N.Y. 1961)
+      GOTO 24  
+C  
+C     CONTINUED FRACTION THEORY (W(Z) IS RELATED TO THE LIMITING  
+C     VALUE OF U(N,Z)/H(N,Z), WHERE U AND H OBEY THE SAME  
+C     RECURRENCE RELATION IN N. SEE FADDEEVA AND TERENTIEV  
+C     (TABLES OF VALUES OF W(Z) FOR COMPLEX ARGUMENTS, PERGAMON  
+C     N.Y. 1961)  
 !
 !  7.9 Ol
-C
-  18  TERM2=DCMPLX(1.D6,0.0D0)
-      Q=1.0D0
-      H1=CONE
-      H2=2.0D0*ZZ
-      U1=CZERO
-      RTPI=2.0D0*SQRT(PI)
-      U2=DCMPLX(RTPI,0.0D0)
-  19  TERM1=TERM2
-      DO 20 N=1,5
-      H3=H2*ZZ-Q*H1
-      U3=U2*ZZ-Q*U1
-      H1=H2
-      H2=2.0D0*H3
-      U1=U2
-      U2=2.0D0*U3
-  20  Q=Q+1.0D0
-      TERM2=U3/H3
-      TEST=ABS((TERM2-TERM1)/TERM1)
-      IF(TEST-EPS)22,21,21
-  21  IF(Q-60.0D0)19,19,13
-  22  CER=API*CI*TERM2
-      GOTO 24
-C
+C  
+  18  TERM2=DCMPLX(1.D6,0.0D0)  
+      Q=1.0D0  
+      H1=CONE  
+      H2=2.0D0*ZZ  
+      U1=CZERO  
+      RTPI=2.0D0*SQRT(PI)  
+      U2=DCMPLX(RTPI,0.0D0)  
+  19  TERM1=TERM2  
+      DO 20 N=1,5  
+      H3=H2*ZZ-Q*H1  
+      U3=U2*ZZ-Q*U1  
+      H1=H2  
+      H2=2.0D0*H3  
+      U1=U2  
+      U2=2.0D0*U3  
+  20  Q=Q+1.0D0  
+      TERM2=U3/H3  
+      TEST=ABS((TERM2-TERM1)/TERM1)  
+      IF(TEST-EPS)22,21,21  
+  21  IF(Q-60.0D0)19,19,13  
+  22  CER=API*CI*TERM2  
+      GOTO 24  
+C 
 !
-!      7.12 Ol
+!      7.12 Ol 
 C     ASYMPTOTIC SERIES: SEE ABRAMOWITZ AND STEGUN, P328  
 C  
   23  CER=0.5124242D0/(ZZS-0.2752551D0)+0.05176536D0/(ZZS-2.724745D0)  
@@ -728,4 +782,4 @@ C
       GOTO 29  
   28  CERF=CER  
   29  RETURN  
-      END  
+      end subroutine cerf
