@@ -123,7 +123,7 @@ C--------/---------/---------/---------/---------/---------/---------/--
       parameter (nfm=natlm*natlm-natlm+1)
       parameter (ndlmm=(2*lmaxd+1)*(2*lmaxd+1)) 
 * cut off on the max. number of the reciprocal lattice vectors
-      PARAMETER(NKMAX=300)
+      PARAMETER(NKMAX=300)  !300 by default
 * cut off on the max. number of the direct lattice vectors
       PARAMETER(NRMAX=300)
 * the Ewald parameter (decrease with increasing sigma)

@@ -1,11 +1,11 @@
-      SUBROUTINE dlsumf2in3(LMAX,KAPPA,AK,DLM)  
+      SUBROUTINE dlsumf2in3(LMAX,KAPPA,AK,DLM) 
 C--------/---------/---------/---------/---------/---------/---------/--
-C     CALCULATES  NON-ZERO ELEMENTS OF THE ARRAY  DLM 
+C     CALCULATES NON-ZERO ELEMENTS OF THE ARRAY DLM 
 C     I.E., FOR L+M EVEN. VALUES AS DEFINED BY KAMBE.
 C                     DLM=DLM1+DLM2+DLM3,
 C     WITH LM=(00),(1-1),(11),(2-2)...  
-C     THE  PROGRAM  ASSUMES  THAT  THE  LAYER IS A BRAVAIS LATTICE. THE  
-C     SUMMATION OVER THE LATTICE FOLLOWS THE EWALD METHOD  SUGGESTED BY  
+C     THE PROGRAM ASSUMES THAT THE LAYER IS A BRAVAIS LATTICE. THE 
+C     SUMMATION OVER THE LATTICE FOLLOWS THE EWALD METHOD SUGGESTED BY 
 C     KAMBE.
 C 
 C     LMAXD       : INTERNAL CUTOFF IN SPHERICAL WAVES EXPANSIONS  
@@ -31,7 +31,7 @@ C
 !     all three contributions DL1, DL2, DL3 are summed up together!!!
 !     Thereby the prefactor i**(1+abs(m)) of DL1 is converted into
 !
-!               i**(1+|m|+M+|M|)=(-1)**m i**(1+M)
+!               i**(1+|m|+M+|M|)=(-1)**m i**(1+M)= i**(1-M)
 !
 !     Does the latter returns back to the Condon-Shortley convention
 !     of spherical harmonics???
@@ -301,7 +301,7 @@ C     INITIALISED AS BELOW. AND USED AS TABLES:
 
       IF(AC-EMACH) 11,11,10  
 
-  10  XPK=DCMPLX(AKPT(1)/AC,AKPT(2)/AC)    !\vK_parallel/K_\parallel
+  10  XPK=DCMPLX(AKPT(1)/AC,AKPT(2)/AC)    !\vphi=\vK_parallel/K_\parallel
       GK=AC/KAPPA                          !K_\parallel/\sigma
       GKK=GPSQ/KAPSQ                       !K_\perp^2/\sigma^2
   11  XPM(1)=DCMPLX(1.0D0,0.0D0)  
@@ -309,8 +309,8 @@ C     INITIALISED AS BELOW. AND USED AS TABLES:
       AGK(1)=DCMPLX(1.0D0,0.0D0)  
 *
       DO I=2,LL2  
-      XPM(I)=XPM(I-1)*XPK         !XPK**(I-1)
-      AGK(I)=AGK(I-1)*GK          !GK**(I-1)
+      XPM(I)=XPM(I-1)*XPK         !XPK**(I-1)= e**(i*|m|*phi)
+      AGK(I)=AGK(I-1)*GK          !GK**(I-1)=(K_\perp/\sigma)^(2*|m|)  for I=1=lm=(0,0)
       end do
 
 !--------/---------/---------/---------/---------/---------/---------/--

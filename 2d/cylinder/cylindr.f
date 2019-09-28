@@ -60,6 +60,14 @@ C      QEXPER =  0.192782E+01
 ! 2) set PARAMETER (CCEPS=(1.55D0,0.d0)**2)
 ! 3) uncomment the lines with !tb
 ! 4) run the code for cylinder radius 525 with 0 step
+!
+!
+! Ruppin test for homogeneous cylinders:
+! For nonlocal TM, there is still numerical overflow.
+! When running test for rsnm=1 nm for wavelengths from
+! 900 down to 300nm in steps of 10 nm for Ruppin simulations
+! all works well till lmax=LMXD=45, but beginning with
+! lmax=LMXD=46 one begins to get NaN entries
 C---------------------------------------------------------------------                                                                                     
       implicit none       
       integer LMXD,LCS,ILCS
@@ -87,7 +95,7 @@ c number of spherical harmonics used
 c number of coatings (for homogeneous cylinder set lcs=1)
       parameter (lcs=1)
 c
-c The coating layer to which material data are read in
+c The (coating) layer to which material data are read in
       parameter (ilcs=1)
 c
 c if coated, the ratio 'core radius/cylinder radius'
@@ -953,8 +961,8 @@ C--------/---------/---------/---------/---------/---------/---------/--
       rewind(NOUT+12) 
 
       OPEN(UNIT=NOUT+13,FILE='osc.dat')
-      WRITE(NOUT+12,*)'k_l*a,extinction s- and p-width in columns' 
-      rewind(NOUT+12) 
+      WRITE(NOUT+13,*)'k_l*a,extinction s- and p-width in columns'
+      rewind(NOUT+13)
            
       if (yntest) then
       
@@ -1091,7 +1099,7 @@ C********************************************************************
 *
 * Calculation of the phase shifts
 *
-      DO 60 j=ij1,lcs        !j is the shell number
+      DO 60 j=ij1,lcs        !j is the shell number; ij1>=1
 
 ****************
 C Nonlocal correction - part I
@@ -1218,7 +1226,7 @@ C ! non-local correction
 
 ********   j=ilcs-1:  
 
-      if (j.eq.ilcs-1) then
+      if (j.eq.ilcs-1) then  !j>=ij1>=1
 
       zm1(2,1,l)=zj2(l)
       zm1(2,2,l)=zn2(l)
