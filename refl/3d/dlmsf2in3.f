@@ -53,16 +53,20 @@ c
 !   Given the cutoff lmax on the order of scattering matrices, the DL
 !   constants have to be calculated with the cutoff 2*lmax
 !   
-!   dlmsf2in3 limits the number of direct/dual lattice vectors used in Kambe summation 
-!   via parameter NRMAX/NKMAX which value is set at present to 300. 
+!   dlmsf2in3 limits the number of direct/dual lattice vectors used 
+!   in Kambe summation via parameters NRMAX/NKMAX which value is set 
+!   at present to 300. 
 !   NRMAX/NKMAX is the upper bound for the routine
 !   latgen2d which, given the two lattice primitive vectors, generate the 
-!   lattice with closed shells having nr,nk vectors <= NRMAX,NKMAX. 
+!   lattice with closed shells having nr,nk vectors <= NRMAX, NKMAX. 
 !   In actual summation, the values nr and nk are used.
 !  
-!   In contrast, dlsumf2in3 of multem does not have a hard upper bound on the 
-!   number of lattice vectors used in Kambe summation. 
-!   It generates lattice vectors until convergence bounds are satisfied. 
+!   dlsumf2in3 of multem limits the number of summation shells via summation loop
+!   variable N1 to <=10. Yet it exits summation once convergence bounds are satisfied.
+!   The measure of convergence is taken to be the usual vector norm
+!             \sum_I |DLM(I))|**2
+!  The measure of convergence is controlled by parameters QP and QT
+!  The summation is enforced to run over at least IENF shells
 !
 !   csigma ... complex energy (because of in general complex dielectric function)
 c   NATL  ... number of atoms in a layer
@@ -342,7 +346,7 @@ cx      do 120 j1=1,nsk(i1)
 
 cx      lpr=.false.
 cx      if (j1.eq.nk) lpr=.true.
-      ib=ib+1                     !>=1 loop counter - TODO: needed at all?
+      ib=ib+1                     !labels dual lattice vectors
       gkx=akx+kv(1,ib)            !akx ... x-component of Bloch// 
       gky=aky+kv(2,ib)            !aky ... y-component of Bloch// 
       gkp2=gkx*gkx+gky*gky

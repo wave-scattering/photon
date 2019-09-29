@@ -10,17 +10,29 @@ C     KAMBE.
 C 
 C     LMAXD       : INTERNAL CUTOFF IN SPHERICAL WAVES EXPANSIONS  
 C     LMAX        : THE ACTUAL CUTOFF IN SPHERICAL WAVES EXPANSIONS 
-C     AK(1), AK(2): THE X  AND Y COMPONENTS OF THE  MOMENTUM PARALLEL 
+C     AK          : the Bloch vector PARALLEL 
 C                   TO THE SURFACE, REDUCED TO THE 1ST BRILLOUIN ZONE
-C                   
-!     EMACH/1.D-8/ IS AN OLD MACHINE ACCURACY - TODO
-!     PI/3.14159265358979D0 - TODO
-!         
+!
+!     ALPHA ... dynamically assigned Ewald parameter
+!     XPM(M) CONTAINS VALUES OF XPK**|M|=e^(i*|m|*\phi)
+!     AGK(I) CONTAINS VALUES OF (AC/KAPPA)**I
+!     GKN(N) CONTAINS VALUES OF (GP/KAPPA)**(2*N-1)*GAM(N,Z)
 !     DENOM(K)=1.0D0/(FAC(I1)*FAC(I2)*FAC(I3)) 
 !                where I1=I, I2=NN-I+1, I3=NN+M-I 
-!     not the same as denom1(iden) in dlmsf2in3!!!
+!                not the same as denom1(iden) in dlmsf2in3!!!
 !
-!     Following Kambi, the Faddeeva complex error function is used
+!   The number of summation shells in the Kambe summation
+!   is limited by summation loop variable N1 to <=10.
+!   Yet it exits summation once convergence bounds are satisfied.
+!   The measure of convergence is taken to be the usual vector norm
+!                   \sum_I |DLM(I))|**2
+!  The measure of convergence is controlled by parameters QP and QT
+!  The summation is enforced to run over at least IENF shells  
+!
+!     EMACH/1.D-8/ IS AN OLD MACHINE ACCURACY - TODO
+!     PI/3.14159265358979D0 - TODO
+!
+!     Following Kambe, the Faddeeva complex error function is used
 !     to generate the values of incomplete gamma function of complex
 !     argument in DL1 contribution
 !
@@ -54,8 +66,15 @@ C
 *   14         165152        1240
 * 
       PARAMETER (LM1SQD=LMAX1D*LMAX1D,NDEND=1240)  
-      PARAMETER (LMDLMD=LMAX1D*(2*LMAXD+1))                       
-C  
+      PARAMETER (LMDLMD=LMAX1D*(2*LMAXD+1)) 
+      
+      integer, parameter :: ienf=4  !enforces the shell summation to take
+                                    !into account at least ienf number
+                                    !of shells
+      real(dp), parameter :: QT=1.d8     !initial values of test1;
+                                         !default was 1.0D6
+      real(dp), parameter :: QP=1.d-6    !required summation precision;
+                                         !default was 1.0D-3                                    
 C ..  SCALAR ARGUMENTS  ..  
 C  
       INTEGER    LMAX  
@@ -136,8 +155,8 @@ C     USED, SUBJECT TO A RESTRICTION WHICH IS IMPOSED TO CONTROL
 C     LATER ROUNDING ERRORS  
 C  
       ALPHA=TV/(4.0D0*PI)*KAPSQ            
-      AL=ABS(ALPHA) 
-                       !Ewald parameter
+      AL=ABS(ALPHA)     !Ewald parameter used by Kambe and Pendry 
+                       
 
       IF(EXP(AL)*EMACH-5.0D-5) 3,3,2  
    2  AL=LOG(5.0D-5/EMACH)  
@@ -233,18 +252,20 @@ C     PARALLELOGRAM OF LATTICE POINTS ABOUT THE ORIGIN, OF SIDE 2*N1+1
 C     EACH STEP BEGINS AT LABEL 9
 !     AKPT=THE CURRENT LATTICE VECTOR IN THE SUM  
 C  
-      TEST1=1.0D6  
+      TEST1=QT    !default was 1.0D6
       II=1  
 
 ! Setting counter N1 for the reciprocal lattice summation:
-      N1=-1  
-   9  N1=N1+1          !loop counter beginning from N1=0
+      N1=-1
+   9  N1=N1+1       !begins dual lattice summation for a given lm with N1=0
+                    !N1 labels summation shells
+
  
       NA=N1+N1+II      !beginning from NA=1
       AN1=DBLE(N1)     !beginning from AN1=0
       AN2=-AN1-1.0D0   !beginning from AN2=-1
 
-! The dual lattice summation loop until convergence bounds are satisied
+! The dual lattice summation loop until convergence bounds are satisfied
 !
       DO 22 I1=1,NA   
       AN2=AN2+1.0D0    !beginning from AN2=0
@@ -291,7 +312,8 @@ C     INITIALISED AS BELOW. AND USED AS TABLES:
      & /3X,'IN THE FREQUENCY OR WAVELENGTH VALUE.') 
       STOP 
       ENDIF 
-*
+
+!Faddeeva function part:
       AC=SQRT(ACSQ)       !K_\parallel; always real number
       GP=SQRT(GPSQ)       !K_\perp; complex in general
 
@@ -340,7 +362,9 @@ C     INITIALISED AS BELOW. AND USED AS TABLES:
       GKN(I)=CF*CX*GAM  
 
       end do 
-!--------/---------/---------/---------/---------/---------/---------/--  
+C--------/---------/---------/---------/---------/---------/---------/--
+*                         DLM1 term
+C--------/---------/---------/---------/---------/---------/---------/--
 C     THE CONTRIBUTION TO THE SUM DLM1 FOR A PARTICULAR  
 C     RECIPROCAL LATTICE VECTOR IS NOW ACCUMULATED INTO  
 C     THE ELEMENTS OF DLM, NOTE SPECIAL ACTION IF AC=0  
@@ -394,11 +418,12 @@ C
 *
       IF(II) 21,21,22 
 * 
-  21  CONTINUE   !I2 summation
- 
-  22  II=0  
+  21  CONTINUE  !over i2
+      II=0      !because II=1 on the input and its value is nowhere changed,
+                !the code never arrives at this line???
+  22  CONTINUE  !over i1
 C  
-C     AFTER EACH STEP OF THE SUMMATION A TEST ON THE  
+C     AFTER EACH STEP OF THE SUMMATION THE TEST ON THE  
 C     CONVERGENCE  OF THE  ELEMENTS OF  DLM IS  MADE  
 C  
       TEST2=0.0D0  
@@ -410,8 +435,11 @@ C
 *
       TEST=ABS((TEST2-TEST1)/TEST1) 
       TEST1=TEST2 
-* 
-      IF(TEST-0.001D0) 27,27,24  
+*
+! to force summation to go beyond N1=1
+      if (n1<=ienf) go to 9    !where the DLM1 shell summation begins
+!
+      IF(TEST-QP) 27,27,24  
   24  IF(N1-10)9,25,25  
   25  WRITE(16,26)N1  
   26  FORMAT(29H**DLM1,S NOT CONVERGED BY N1=,I2)  
@@ -425,8 +453,9 @@ C     WRITE(16,250)DLM
 C250  FORMAT(5H0DLM1,//,45(2E13.5,/))  
 C
 
-!--------/---------/---------/---------/---------/---------/---------/--
-C                             DLM2
+C--------/---------/---------/---------/---------/---------/---------/--
+*                         DLM2 term
+C--------/---------/---------/---------/---------/---------/---------/--
 C     DLM2, THE SUM OVER REAL SPACE LATTICE VECTORS, BEGINS WITH  
 C     THE ADJUSTMENT OF THE ARRAY PREF, TO CONTAIN VALUES OF THE  
 C     PREFACTOR  'P2' FOR LM=(00),(11),(20),(22),...  
@@ -561,7 +590,10 @@ C
       TEST=ABS((TEST2-TEST1)/TEST1)  
       TEST1=TEST2  
 *
-      IF(TEST-0.001D0) 45,45,42  
+! to force summation to go beyond N1=1
+      if (n1<=ienf) go to 32    !where the DLM2 shell summation begins
+!
+      IF(TEST-QP) 45,45,42  
   42  IF(N1-10)32,43,43  
   43  WRITE(16,44)N1  
   44  FORMAT(31H0**DLM2,S NOT CONVERGED BY N1 =,I2) 
@@ -572,8 +604,9 @@ C
 * 
   46  FORMAT(24H DLM2,S CONVERGED BY N1=,I2)  
 
-!--------/---------/---------/---------/---------/---------/---------/--
-C                              DLM3 
+C--------/---------/---------/---------/---------/---------/---------/--
+*                         DLM3 term
+C--------/---------/---------/---------/---------/---------/---------/--
 C     THE TERM DLM3 HAS A NON-ZERO CONTRIBUTION  ONLY  
 C     WHEN L=M=0.IT IS EVALUATED HERE IN TERMS OF THE  
 C     COMPLEX ERROR FUNCTION CERF  
