@@ -31,6 +31,8 @@ C                   TO THE SURFACE, REDUCED TO THE 1ST BRILLOUIN ZONE
 !
 !     EMACH/1.D-8/ IS AN OLD MACHINE ACCURACY - TODO
 !     PI/3.14159265358979D0 - TODO
+!     AN,AN1,AN2 cuold be integers  - TODO
+!     Check obsolete IF(AC-1.0D-6) etc - TODO
 !
 !     Following Kambe, the Faddeeva complex error function is used
 !     to generate the values of incomplete gamma function of complex
@@ -40,7 +42,7 @@ C                   TO THE SURFACE, REDUCED TO THE 1ST BRILLOUIN ZONE
 !     harmonics with e.g. i**(1+|m|) prefactor of DL1
 !
 !     At the very end FACTOR (-1.0D0)**((M+|M|)/2)=i**(M+|M|) is added after
-!     all three contributions DL1, DL2, DL3 are summed up together!!!
+!     all three contributions DLM1, DLM2, DLM3 are summed up together!!!
 !     Thereby the prefactor i**(1+abs(m)) of DL1 is converted into
 !
 !               i**(1+|m|+M+|M|)=(-1)**m i**(1+M)= i**(1-M)
@@ -169,7 +171,7 @@ C
 C     THE FACTORIAL  FUNCTION  IS TABULATED  IN FAC . THE ARRAY  
 C     DLM WILL CONTAIN NON-ZERO, I.E., L+M EVEN,VALUES AS DEFINED  
 C     BY KAMBE: DLM=DLM1+DLM2+DLM3 WITH LM=(00),(1-1),(11),(2-2)...  
-C   
+   
       LL2=2*LMAX+1  
       FAC(1)=1.0D0  
       II=4*LMAX 
@@ -193,7 +195,8 @@ C     CALCULATED FIRST.
 !     THE PREFACTOR PREF IS TABULATED  FOR EVEN
 C     VALUES OF L+|M|, THUS LM=(00),(11),(20),(22),(2*LMAX,2*LMAX)
 !  
-C     THE  FACTORIAL FACTOR F1 IS TABULATED IN DENOM, FOR ALL VALUES OF N=0,(L-|M|)/2  
+!  THE FACTORIAL FACTOR F1 IS TABULATED IN DENOM
+!  FOR ALL VALUES OF N=0,(L-|M|)/2  
 C  
 !--------/---------/---------/---------/---------/---------/---------/--
 ! Lattice vectors independent part
@@ -250,9 +253,15 @@ C     BEGINS WITH THE ORIGIN POINT OF THE LATTICE, AND CONTINUES IN
 C     STEPS OF 8*N1 POINTS, EACH  STEP INVOLVING THE PERIMETER OF A
 C     PARALLELOGRAM OF LATTICE POINTS ABOUT THE ORIGIN, OF SIDE 2*N1+1  
 C     EACH STEP BEGINS AT LABEL 9
-!     AKPT=THE CURRENT LATTICE VECTOR IN THE SUM  
-C  
+!     AKPT= THE CURRENT \vK_\parallel IN THE SUM  
+
+! convergence parameter:  
       TEST1=QT    !default was 1.0D6
+
+! the dual lattice summation includes the vector \vg==0. In this case
+! there is only a single passage of the "do 21" loop controlled by
+! the initial setting of the variable II=1 at the loop end:
+
       II=1  
 
 ! Setting counter N1 for the reciprocal lattice summation:
@@ -265,11 +274,17 @@ C
       AN1=DBLE(N1)     !beginning from AN1=0
       AN2=-AN1-1.0D0   !beginning from AN2=-1
 
+! Main summation loop:
 ! The dual lattice summation loop until convergence bounds are satisfied
-!
-      DO 22 I1=1,NA   
+
+      DO I1=1,NA   
       AN2=AN2+1.0D0    !beginning from AN2=0
- 
+
+! Generate 4 different (AN1,AN2) ---> (-AN2,AN1)
+! Does not make sense if AN1=AN2=0. Therefore, in the latter
+! case, there is only a single loop passage controlled by the initial
+! setting of the variable II=1 at the loop end
+
       DO 21 I2=1,4 
  
 C     WRITE(16,307) I1,I2  
@@ -285,7 +300,19 @@ C 307 FORMAT(33X,'I1=',I2,' , I2=',I2/33X,12('='))
 !Set \vK_parallel: 
       AKPT(1)=AK(1)+AB1  
       AKPT(2)=AK(2)+AB2  
-C 
+      
+! For a square lattice one has the primitive basis vectors:
+! 
+! B2=(6.28318530717958; 3.6275987284684272)
+! B1=(0;7.2551974569368678)
+! 
+! Check that there is:
+!
+!       AKPT(1)=AK(1)\pm B1
+!       AKPT(2)=AK(2)\pm AB2
+!
+! in the resulting summation!!!
+!--------/---------/---------/---------/---------/---------/---------/--
 C     FOR  EVERY LATTICE VECTOR OF THE SUM, THREE SHORT ARRAYS ARE  
 C     INITIALISED AS BELOW. AND USED AS TABLES: 
 ! 
@@ -332,7 +359,8 @@ C     INITIALISED AS BELOW. AND USED AS TABLES:
 *
       DO I=2,LL2  
       XPM(I)=XPM(I-1)*XPK         !XPK**(I-1)= e**(i*|m|*phi)
-      AGK(I)=AGK(I-1)*GK          !GK**(I-1)=(K_\perp/\sigma)^(2*|m|)  for I=1=lm=(0,0)
+      AGK(I)=AGK(I-1)*GK          !GK**(I-1)=(K_\perp/\sigma)^(2*|m|)  
+                                  !for I=1=lm=(0,0)
       end do
 
 !--------/---------/---------/---------/---------/---------/---------/--
@@ -395,33 +423,33 @@ C
 
        ACC=PREF(KK)*ACC  
 
-! PREF(KK)=AP*CP where AP=AP1*SQRT(AP2*FAC(J1)*FAC(J2)), CP=CI/KAPPA, +/- 1/KAPPA,
+! PREF(KK)=AP*CP where AP=AP1*SQRT(AP2*FAC(J1)*FAC(J2)), 
+! CP=CI/KAPPA, +/- 1/KAPPA,
 ! AP1=-1.d0/(TV*2.0D0**(l-1)) with TV being unit cell area, and 
 ! AP2=2*L-1, J1=L+M-1, J2=L-M+1
 *
        IF(AC-1.0D-6) 17,17,165  
 
- 165   DLM(N)=DLM(N)+ACC/XPM(M) 
+ 165   DLM(N)=DLM(N)+ACC/XPM(M)    !XPM(M)= e**(i*|m|*phi) 
  
        IF(M-1) 17,18,17 
  
   17   NM=N-M+1  
 *
-
-       DLM(NM)=DLM(NM)+ACC*XPM(M) 
-
-!XPM(I)=XPK**(I-1) 
+       DLM(NM)=DLM(NM)+ACC*XPM(M)   !XPM(M)= e**(i*|m|*phi) 
 
   18   KK=KK+1  
        N=N+1  
        end do   !l-loop
 *
-      IF(II) 21,21,22 
+      IF(II) 21,21,22  !II=1 exits the "do 21"-loop and goes straight to II=0
+                       !in the "do I1"-loop
 * 
   21  CONTINUE  !over i2
-      II=0      !because II=1 on the input and its value is nowhere changed,
-                !the code never arrives at this line???
-  22  CONTINUE  !over i1
+  
+  22  II=0      !from now on, the "do 21"-loop is performed fully
+                
+      enddo     !over I1
 C  
 C     AFTER EACH STEP OF THE SUMMATION THE TEST ON THE  
 C     CONVERGENCE  OF THE  ELEMENTS OF  DLM IS  MADE  
@@ -430,7 +458,7 @@ C
 *
       DO I=1,NNDLM  
       DNORM=ABS(DLM(I))  
-      TEST2=TEST2+DNORM*DNORM  
+      TEST2=TEST2+DNORM*DNORM    !=\sum_I |DLM(I))|**2  
       end do     !I-loop
 *
       TEST=ABS((TEST2-TEST1)/TEST1) 
@@ -440,26 +468,32 @@ C
       if (n1<=ienf) go to 9    !where the DLM1 shell summation begins
 !
       IF(TEST-QP) 27,27,24  
-  24  IF(N1-10)9,25,25  
-  25  WRITE(16,26)N1  
+  24  IF(N1-10) 9,25,25  
+*
+!unsuccessful exit-even if not converged continues to DLM2-summation:
+
+  25  WRITE(16,26) N1  
   26  FORMAT(29H**DLM1,S NOT CONVERGED BY N1=,I2)  
 
-      GOTO 285    !successful exit
+      GOTO 285   !to DLM2-summation
+
+!successful exit:
 
   27  WRITE(16,28) N1  
-*
   28  FORMAT(25H DLM1,S CONVERGED BY N1 =,I2)  
-C     WRITE(16,250)DLM  
+C     WRITE(16,250) DLM  
 C250  FORMAT(5H0DLM1,//,45(2E13.5,/))  
 C
-
 C--------/---------/---------/---------/---------/---------/---------/--
 *                         DLM2 term
 C--------/---------/---------/---------/---------/---------/---------/--
 C     DLM2, THE SUM OVER REAL SPACE LATTICE VECTORS, BEGINS WITH  
 C     THE ADJUSTMENT OF THE ARRAY PREF, TO CONTAIN VALUES OF THE  
 C     PREFACTOR  'P2' FOR LM=(00),(11),(20),(22),...  
-C  
+!     The direct lattice vector R=0 is excluded from the summation.
+!     Therefore there is no need to enforce a single passage of "do I2"
+!     loop as was the case of dual lattice summation
+  
  285  KK=1  
       AP1=TV/(4.0D0*PI)  
       CF=KAPSQ/CI 
@@ -487,18 +521,21 @@ C
       enddo !M-loop  
       enddo !L-loop 
 *
-C  
+ 
 C     THE SUMMATION PROCEEDS IN STEPS OF 8*N1 LATTICE POINTS  
 C     AS BEFORE, BUT THIS  TIME EXCLUDING  THE ORIGIN  POINT  
 C     R=THE CURRENT LATTICE VECTOR IN THE SUM  
 C     AR=MOD(R)  
-C  
+
       N1=0  
   32  N1=N1+1  
       NA=N1+N1  
       AN1=DBLE(N1)  
       AN2=-AN1-1.0D0 
 * 
+! Main summation loop:
+! The direct lattice summation loop until convergence bounds are satisfied
+
       DO 40 I1=1,NA  
       AN2=AN2+1.0D0  
 *
@@ -540,7 +577,7 @@ C
       U2=AB*XPA/KANT  
 C  
 C     THE CONTRIBUTION TO DLM2 FROM A PARTICULAR LATTICE  
-C     VECTOR  IS  ACCUMULATED INTO  THE ELEMENTS OF  DLM  
+C     VECTOR IS ACCUMULATED INTO THE ELEMENTS OF DLM.
 C     THIS PROCEDURE INCLUDES THE TERM (KANT**L) AND THE  
 C     RECURRENCE FOR THE INTEGRAL 'U' 
 C  
@@ -575,7 +612,7 @@ C
        U2=U  
        CF=KANT*CF  
        enddo !L-loop 
-  40  CONTINUE  
+  40  CONTINUE    !I1, I2 main summation loop
 C  
 C     AFTER EACH STEP OF THE SUMMATION A TEST ON THE  
 C     CONVERGENCE OF THE ELEMENTS OF DLM IS MADE  
@@ -584,7 +621,7 @@ C
 *
       DO I=1,NNDLM  
       DNORM=ABS(DLM(I))  
-      TEST2=TEST2+DNORM*DNORM  
+      TEST2=TEST2+DNORM*DNORM   !=\sum_I |DLM(I))|**2  
       enddo !I-loop 
 
       TEST=ABS((TEST2-TEST1)/TEST1)  
@@ -594,14 +631,18 @@ C
       if (n1<=ienf) go to 32    !where the DLM2 shell summation begins
 !
       IF(TEST-QP) 45,45,42  
-  42  IF(N1-10)32,43,43  
-  43  WRITE(16,44)N1  
+  42  IF(N1-10) 32,43,43  
+*
+!unsuccessful exit-even if not converged continues to DLM3-summation:
+
+  43  WRITE(16,44) N1  
   44  FORMAT(31H0**DLM2,S NOT CONVERGED BY N1 =,I2) 
  
-      GOTO 465  !successful exit
+      GOTO 465   !to DLM3-summation
+
+!successful exit:
 
   45  WRITE(16,46) N1 
-* 
   46  FORMAT(24H DLM2,S CONVERGED BY N1=,I2)  
 
 C--------/---------/---------/---------/---------/---------/---------/--
@@ -624,7 +665,8 @@ C     FACTOR (-1.0D0)**((M+|M|)/2)
 C
 *  
       DO L=2,LL2,2  
-      N=L*L/2+1  
+      N=L*L/2+1 
+* 
       DO M=2,L,2  
       DLM(N)=-DLM(N)  
       N=N+1 
@@ -634,7 +676,6 @@ C
 C     WRITE(16,251) DLM  
 C 251 FORMAT(15H0DLM1+DLM2+DLM3,//45(2E13.5,/))  
 C  
-
       RETURN  
       end subroutine dlsumf2in3
 
@@ -661,7 +702,8 @@ C     THEORY, OR AN ASYMPTOTIC SERIES).
 !     BACK TO QUADRANT NN 
 !
 !     AS = ABRAMOWITZ AND STEGUN HANDBOOK OF MATHEMATICAL FUNCTIONS
-!     Ol = Olver NIST HANDBOOK OF MATHEMATICAL FUNCTIONS at https://dlmf.nist.gov
+!     Ol = Olver NIST HANDBOOK OF MATHEMATICAL FUNCTIONS 
+!           at https://dlmf.nist.gov
 C     ------------------------------------------------------------------  
 C  
 C ..  SCALAR ARGUMENTS  ..  
@@ -687,13 +729,13 @@ C
       DATA PI/3.14159265358979D0/  
       DATA CONE/(1.D0,0.D0)/,CI/(0.D0,1.D0)/,CZERO/(0.D0,0.D0)/  
 C     ------------------------------------------------------------------  
-C  
+  
       EPS=5.0D0*EMACH  
       API=1.0D0/PI 
 
 ! the Faddeeva complex error function part:
 
-      IF(ABS(Z))2,1,2  
+      IF(ABS(Z)) 2,1,2  
    1  CERF=CONE         !special value for z==0
       GOTO 29
       
@@ -701,12 +743,12 @@ C
 !     THE ARGUMENT Z/=0 IS TRANSLATED FROM THE NN_TH QUADRANT INTO ZZ
 !     IN THE FIRST QUADRANT, BEFORE THE METHOD FOR THE
 !     Faddeeva complex error function EVALUATION IS CHOSEN 
-C  
+ 
    2  X=DBLE(Z)  
       Y=DIMAG(Z)  
       YY=Y  
-      IF(Y)6,3,3  
-   3  IF(X)5,4,4  
+      IF(Y) 6,3,3  
+   3  IF(X) 5,4,4  
    4  ZZ=Z  
       NN=1  
       GOTO 9  
@@ -714,7 +756,7 @@ C
       NN=2  
       GOTO 9  
    6  YY=-Y  
-      IF(X)7,8,8  
+      IF(X) 7,8,8  
    7  ZZ=-Z  
       NN=3  
       GOTO 9  
@@ -723,11 +765,11 @@ C
    9  ZZS=ZZ*ZZ  
       XZZS=EXP(-ZZS)  
       ABSZ=ABS(ZZ)  
-      IF(ABSZ-10.0D0)10,10,23  
-  10  IF(YY-1.0D0)11,12,12  
-  11  IF(ABSZ-4.0D0)13,18,18  
-  12  IF(ABSZ-1.0D0)13,18,18  
-C  
+      IF(ABSZ-10.0D0) 10,10,23  
+  10  IF(YY-1.0D0) 11,12,12  
+  11  IF(ABSZ-4.0D0) 13,18,18  
+  12  IF(ABSZ-1.0D0) 13,18,18  
+ 
 ! POWER SERIES (SEE 7.1.5 AS, p. 297; 7.6.1 Ol) 
 ! In the series, n-th term for -iz is a z**2*(2n-1)/(n*(2n+1))
 ! multiple of the (n-1)-th term
@@ -737,7 +779,7 @@ C
 ! One wonders why not the power series 7.1.8 AS, p. 297; 7.6.3 Ol
 ! is being used?? The latter would lead directly 
 ! to the Faddeeva error function w(z)??? TODO
-C  
+ 
   13  Q=1.0D0          !provides n!
       FACTN=-1.0D0     !provides (2n-1) 
       FACTD=1.0D0      !provides (2n+1) 
@@ -756,8 +798,8 @@ C
       enddo
   
       ABTERM=ABS(TERM1)  
-      IF(ABTERM-EPS)17,16,16  
-  16  IF(Q-100.0D0)14,17,17  
+      IF(ABTERM-EPS) 17,16,16  
+  16  IF(Q-100.0D0) 14,17,17  
 
   17  FACT=2.0D0*SQRT(API)  
       SUM=FACT*CI*SUM       !adds the missing prefactor 2*i/\sqrt{\pi} for 
@@ -765,7 +807,7 @@ C
       CER=XZZS+XZZS*SUM     !generates Faddeeva error function w(z)
                             !according to 7.1.3 AS; 7.2.3 Ol
       GOTO 24  
-C  
+  
 C     CONTINUED FRACTION THEORY (W(Z) IS RELATED TO THE LIMITING  
 C     VALUE OF U(N,Z)/H(N,Z), WHERE U AND H OBEY THE SAME  
 C     RECURRENCE RELATION IN N. SEE FADDEEVA AND TERENTIEV  
@@ -773,7 +815,7 @@ C     (TABLES OF VALUES OF W(Z) FOR COMPLEX ARGUMENTS, PERGAMON
 C     N.Y. 1961)  
 !
 !  7.9 Ol
-C  
+  
   18  TERM2=DCMPLX(1.D6,0.0D0)  
       Q=1.0D0  
       H1=CONE  
@@ -792,21 +834,21 @@ C
   20  Q=Q+1.0D0  
       TERM2=U3/H3  
       TEST=ABS((TERM2-TERM1)/TERM1)  
-      IF(TEST-EPS)22,21,21  
-  21  IF(Q-60.0D0)19,19,13  
+      IF(TEST-EPS) 22,21,21  
+  21  IF(Q-60.0D0) 19,19,13  
   22  CER=API*CI*TERM2  
       GOTO 24  
-C 
+ 
 !
-!      7.12 Ol 
+!     7.12 Ol 
 C     ASYMPTOTIC SERIES: SEE ABRAMOWITZ AND STEGUN, P328  
-C  
+  
   23  CER=0.5124242D0/(ZZS-0.2752551D0)+0.05176536D0/(ZZS-2.724745D0)  
       CER=CI*ZZ*CER  
-C  
+  
 C     SYMMETRY RELATIONS ARE NOW USED TO TRANSFORM THE FUNCTION  
 C     BACK TO QUADRANT NN  
-C  
+  
   24  GOTO(28,26,27,25),NN  
   25  CER=2.0D0*XZZS-CER  
   26  CERF=DCONJG(CER)  

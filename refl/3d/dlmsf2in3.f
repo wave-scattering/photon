@@ -61,14 +61,16 @@ c
 !   lattice with closed shells having nr,nk vectors <= NRMAX, NKMAX. 
 !   In actual summation, the values nr and nk are used.
 !  
-!   dlsumf2in3 of multem limits the number of summation shells via summation loop
-!   variable N1 to <=10. Yet it exits summation once convergence bounds are satisfied.
+!   dlsumf2in3 of multem limits the number of summation shells via summation 
+!   loop variable N1 to <=10. Yet it exits summation once convergence bounds
+!   are satisfied.
 !   The measure of convergence is taken to be the usual vector norm
 !             \sum_I |DLM(I))|**2
 !  The measure of convergence is controlled by parameters QP and QT
 !  The summation is enforced to run over at least IENF shells
 !
-!   csigma ... complex energy (because of in general complex dielectric function)
+!   csigma ... complex energy (because of in general complex 
+!                 dielectric function)
 c   NATL  ... number of atoms in a layer
 c   POS   ... position of the atoms in the unit cell read as
 c                       (z,x,y) and scaled by spa
@@ -102,7 +104,8 @@ C   DTHR  ... required % precision of DL's calculation
 !   dlm1(lm,1)= \sum acc*phase*phim(m)*pref1(lm)/ka
 !
 !   Q0 ... fixed Ewald parameter
-!   ALPHA ... dynamically assigned Ewald parameter as in (41) of Kam2 or (4.73) of Pendry
+!   ALPHA ... dynamically assigned Ewald parameter 
+!             as in (41) of Kam2 or (4.73) of Pendry
 !  ==================
 !   Preset in dlmset:
 !
@@ -371,11 +374,11 @@ c----- calculate the incomplete gamma functn gamfn by recurrence
 c      note this is limit of delta as cz->0
 
 ! Set the second argument of gamfn in JPA39 eq. 85:
-      cx=-kaz2*q0/2.d0                !kaz=K_perp; Eqs 40-1 of Ka2; JPA39 eq. 85
-                                      !=x of (A.3.1) of Ka3
+      cx=-kaz2*q0/2.d0             !kaz=K_perp; Eqs 40-1 of Ka2; JPA39 eq. 85
+                                   !=x of (A.3.1) of Ka3
 
 
-      crtx_if: if (dble(cx).ge.0.) then          !cf. (40) of Ka2; (A.3.6) of Ka3
+      crtx_if: if (dble(cx).ge.0.) then   !cf. (40) of Ka2; (A.3.6) of Ka3
 
 !K_perp purely imaginary, cx positive real, and arg cx=0.
 ! Hence crtx in the argument ci*crtx of the Faddeeva complex error function is
@@ -430,7 +433,8 @@ c
       do 50 i=1,natl(lay)  
 *
       if (i.eq.j.and.i.gt.1) go to 50   !skip the main loop to avoid
-                                        !repeated calculation of the diagonal term
+                                        !repeated calculation of the 
+                                        !diagonal term
       ifl=ifl+1   
       drz=pos(1,i,lay)-pos(1,j,lay)    ! pos are read as (z,x,y),
 C                                      ! drz is the difference of z-components
@@ -594,7 +598,8 @@ c----- assemble dlm1 from acc and other factors - JPA39 eq. 85
 c Summary:
 !    acc=\sum_n gkpbka(l-2*n)*kazbka(2*n-1)*denom1(iden)*gamfn(n) for coplanar
 *    acc=\sum_n\sum_s delta(n,ifl)*kazbka(2*n-1)*sums for noncoplanar
-*    phase=e^{i(k_//+k_s).a_//}=e^{iK_//.a_//} ... ==1 for a simple Bravais lattice
+*    phase=e^{i(k_//+k_s).a_//}=e^{iK_//.a_//} ... ==1 
+!                                             for a simple Bravais lattice
 *    phim(m)=e^{-im\phi_{K//}}
 *    pref1(lm)=-2^{-l}*sqrt((2*l+1)*fctrl(l+m)*fctrl(l-m))*i^{1+|m|}/area
 * ===>
@@ -996,8 +1001,10 @@ c
       islmev=(mod(l-iabs(m),2).eq.0)
       lm=lm+1
       if (islmev) lmeven=lmeven+1
-      const=-sqrt((l+l+1)*fctrl(l+m)*fctrl(l-m))/(2**l)   !checked  that it divides by 2
-      pref1(lm)=const*im(m)/area       !const*im(-abs(m))/area   ... yields i**(1+|m|)
+      const=-sqrt((l+l+1)*fctrl(l+m)*fctrl(l-m))/(2**l)   
+                          !checked  that it divides by 2
+      pref1(lm)=const*im(m)/area       
+                          !const*im(-abs(m))/area ... yields i**(1+|m|)
 *
       if (islmev) then
 

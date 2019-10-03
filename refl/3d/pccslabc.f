@@ -30,10 +30,10 @@ C     \cite{Mis91} also claims the relation:
 C
 C                T_{lm,l'm}^{ij}= (-1)^{i+j} T_{l-m,l'-m}^{ij}
 !
-!     TMT(IFL,JA,JA,IB) with IFL=(1,4) corresponding to EE,EH,HE,HH
-!                       two middle indices are between (1,LMTD=LMAX1D*LMAX1D-1),
-!                       orresponding to L=(l,m)=(1,-1)=1,
-!                       whereas the 4th index labels different scatterers
+!     TMT(IFL,JA,JA,IB) with IFL=(1,4) corresponding to EE,EH,HE,HH,
+!                       two middle indices between (1,LMTD=LMAX1D*LMAX1D-1),
+!                       corresponding to L=(l,m)=(1,-1)=1,
+!                       with the 4th index labeling different scatterers
 C
 C     IFL=2 is for va(2)-va(1)
 C     KAPPA0=DCMPLX(ZVAL,EPSILON)  ... SCANNING OVER FREQUENCIES  
@@ -49,7 +49,7 @@ C     RAP=S(1,1)*KAPPA0/2.D0/PI     !=rmuf*ALPHA/LAMBDA =rsnm/LAMBDA
       IMPLICIT NONE 
 C  
 C ..  PARAMETER STATEMENTS ..  
-C  
+  
       character*1, intent(in) :: ync
       INTEGER   LMAXD,LMAX1D,LMTD,IGD,IGKD,NCMB,NFM,LMVT,LM1SQD,INMAXD,
      1          NYLRD,NDLMM
@@ -63,7 +63,7 @@ C
       PARAMETER (INMAXD=NCMB*LMVT) 
 C  
 C ..  SCALAR ARGUMENTS ..  
-C  
+  
       INTEGER, intent(in) :: LMAX,IGMAX
       INTEGER NBAS
       REAL*8, intent(in) :: A0,EMACH   
@@ -72,13 +72,13 @@ C
   
 C  
 C ..  ARRAY ARGUMENTS ..  
-C  
+ 
       REAL*8, intent(in) ::  AK(2),DL(3),DR(3),G(2,IGD)  
       COMPLEX*16, intent(out) :: QI(IGKD,IGKD),QII(IGKD,IGKD)  
       COMPLEX*16, intent(out) :: QIII(IGKD,IGKD),QIV(IGKD,IGKD)  
 C  
 C ..  LOCAL SCALARS  ..  
-C  
+ 
   
       INTEGER    J,IFL,L,M,II,LP,MP,IIP,IGK1,IGK2,LMAX1,IGKMAX,LMTOT  
       INTEGER    IG1,IG2,ISIGN1,ISIGN2,K1,K2,IPLP  
@@ -87,7 +87,7 @@ C
       COMPLEX*16 CONE,CI,CZERO,CQI,CQII,CQIII,CQIV,CFAC  
 C  
 C ..  LOCAL ARRAYS  ..  
-C  
+  
       INTEGER    INT(INMAXD)
       COMPLEX*16 AE(2,LM1SQD),AH(2,LM1SQD),GKK(3,IGD)  
       COMPLEX*16 GK(3),LAME(2),LAMH(2)  
@@ -110,11 +110,11 @@ C
 *      INTRINSIC DCMPLX,MOD,SQRT  
 C  
 C ..  EXTERNAL ROUTINES ..  
-C  
+  
       EXTERNAL TMTAXSP,ZGE,ZSU,PLW,SETUP,DLMKG  
 C  
 C ..  DATA STATEMENTS ..  
-C  
+  
       DATA CONE/(1.D0,0.D0)/,CI/(0.D0,1.D0)/,CZERO/(0.D0,0.D0)/  
 C     ------------------------------------------------------------------  
 C
@@ -142,12 +142,12 @@ C
       inmax2=2*nbas*LMTOT     !secular matrix dimension
       NF=NBAS*NBAS-NBAS+1     !different possible pairings in complex lattice; NBAS=NF=1 for simple lattice
 *
-      DO 10 IG1=1,IGMAX  
+      DO IG1=1,IGMAX  
       GKK(1,IG1)=DCMPLX((AK(1)+G(1,IG1)),0.D0)  
       GKK(2,IG1)=DCMPLX((AK(2)+G(2,IG1)),0.D0)  
       GKK(3,IG1)=SQRT(KAPPA*KAPPA-GKK(1,IG1)*GKK(1,IG1)-  
      &                            GKK(2,IG1)*GKK(2,IG1)) 
-   10 CONTINUE 
+      enddo
 
 ***********************************
 *>>> for debugging:
@@ -160,6 +160,7 @@ cc      OPEN(62,FILE='tmtmmdiag.dat')
       
 !      go to 33
 cx      if (ib.eq.1)
+
       CALL TMTRXN(YNC,LMAX1,RAP,EPSSPH,EPSMED,MUMED,MUSPH,TE,TH)
 C ==========
 C     TH     : -i*\sg t_{M}    
@@ -174,6 +175,7 @@ C ==========
 
             II=1
             DO JB=2,LMAX+1
+
             ja=jb-1        !now physical l
             do m=-ja,ja
 *                                         make TMAT from -i*sg*TMAT
@@ -192,7 +194,8 @@ C ==========
         if (ii>lmtd+1) write(*,*) 'ii>lmtd+1 in pcclabc!'
 cx      if (ib.gt.1)
 *
-      go to 44
+      go to 44   !to do for testing to switch between 2 different
+                 !T-natrix routines
  33   continue
 
 !      CALL TMTAXSP(LMAX,CRAP,EPSSPH,EPSMED,TMT(1,1,1,ib))
@@ -234,13 +237,14 @@ cc      close(62)
 *<<<
  44   continue
       ENDDO   !the loop over NBAS
-!
+
 ! Determine the scalar structure constants 
-!
+
       call dlmset(lmax)
       call dlmsf2in3(lmax,nbas,kappa,ak,dlm) 
 *
-      do ifl=1,nf  !different possible pairings in complex lattice; nf=1 for a simple lattice
+      do ifl=1,nf  !different possible pairings in complex lattice; 
+                   !nf=1 for a simple lattice
 *                            
 * (1,2) phase factor for diamond lattice
 *
@@ -250,7 +254,9 @@ c      if (ifl.eq.2) cfac=exp(-ci*kappa*sqrt(6.d0)/4.d0)
 c      if (ifl.eq.3) cfac=exp(ci*kappa*sqrt(6.d0)/4.d0)
 *                                (1,2) phase factor for diamond lattice
 *
-      call blf2in3(lmax,xmat(1,1,ifl),dlm(1,ifl))     !XMAT=A_{LL'} assigned including XMAT(1,1)
+      call blf2in3(lmax,xmat(1,1,ifl),dlm(1,ifl))     
+
+!XMAT=A_{LL'} assigned including XMAT(1,1)
 *
 !make g_{LL'} from A_{LL'}
 !
@@ -269,11 +275,11 @@ c      if (ifl.eq.3) cfac=exp(ci*kappa*sqrt(6.d0)/4.d0)
 !===========================================================
 !
 ! Determine the resulting secular matrix
-!
+
       CALL secularc(lmax,nbas,tmt,vec,ama)
-!
+
 ! Perform matrix inversion of the secular matrix 
-!
+
       CALL ZGE(AMA,INT,INMAX2,INMAXD,EMACH)   
 *
       ISIGN2=1  
@@ -297,7 +303,7 @@ c      if (ifl.eq.3) cfac=exp(ci*kappa*sqrt(6.d0)/4.d0)
       IGK2=IGK2+1    
 *
 * RIGHT HAND SIDE:
-*
+
       DO 20 L=1,LMAX  
       DO 20 M=-L,L  
 
@@ -365,7 +371,7 @@ cs      call gzbsvd3d(INMAX2,INMAXD,AMA,BMEL,EMACH)
       GK(3)=SIGN1*GKK(3,IG1)  
 *
       CALL DLMKG(LMAX,A0,GK,SIGN1,KAPPA,DLME,DLMH,EMACH)  
-
+*
       DO 50 K1=1,2                     !1st loop over spherical coordinates
 C
 C     PERFORMING EQ. (18) OF CPC 132, 189 (2000) FOR I=1 AND I=2
@@ -398,12 +404,12 @@ C
       IF(ISIGN1.EQ.2) QIII(IGK1,IGK2)=LAMH(K1)+LAME(K1)  
    70 CONTINUE 
 * 
-   90 CONTINUE                          !sum over IG1
-   40 CONTINUE                          !sum over ISIGN1
+   90 CONTINUE                !sum over IG1
+   40 CONTINUE                !sum over ISIGN1
 
-   30 CONTINUE                          !K2 - 2nd loop over spherical coordinates  
+   30 CONTINUE                !K2 - 2nd loop over spherical coordinates  
      
-   80 CONTINUE                          !sum over IG2 
+   80 CONTINUE                !sum over IG2 
 * 
                     IGK2=0  
                     DO 110 IG2=1,IGMAX  
@@ -424,8 +430,10 @@ C
        QIV(IGK1,IGK1)=CONE + QIV(IGK1,IGK1)  
  120  CONTINUE  
       IGK2=0  
+
       DO 140 IG2=1,IGMAX  
       DO 140 IG1=1,IGMAX  
+
       CQI  =EXP(CI*(GKK(1,IG1)*DR(1)+GKK(2,IG1)*DR(2)+GKK(3,IG1)*DR(3)+  
      &              GKK(1,IG2)*DL(1)+GKK(2,IG2)*DL(2)+GKK(3,IG2)*DL(3)))  
       CQII =EXP(CI*((GKK(1,IG1)-GKK(1,IG2))*DR(1)+(GKK(2,IG1)  
@@ -441,9 +449,11 @@ C
       QI  (IGK1,IGK2)=CQI  *QI  (IGK1,IGK2)  
       QII (IGK1,IGK2)=CQII *QII (IGK1,IGK2)  
       QIII(IGK1,IGK2)=CQIII*QIII(IGK1,IGK2)  
-      QIV (IGK1,IGK2)=CQIV *QIV (IGK1,IGK2)  
+      QIV (IGK1,IGK2)=CQIV *QIV (IGK1,IGK2) 
+ 
   130 CONTINUE  
   140 CONTINUE 
+
       RETURN  
       END  
 C (C) Copr. 11/2001  Alexander Moroz
