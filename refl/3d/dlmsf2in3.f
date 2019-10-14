@@ -301,7 +301,7 @@ cx      else
       end if
 *
 c                                                                           
-c----- separation constant alpha defined in leed by j.b. pendry
+c----- Ewald-Kambe constant alpha defined as in leed by j.b. pendry
 c   
       ka2=csigma**2  !+(0.d0,1.d0)*emach    !ka2 should be csigma**2
       ka=sqrt(ka2)                          !hence ka should be csigma
@@ -619,12 +619,13 @@ c
            end if
          end if
 *
-cx      test=test+abs(dlm1(lm,ifl))
+      test=test+abs(dlm1(lm,ifl))
 cx      if (ipr.gt.2.and.lpr) write (6,270) l,m,ifl,i1,dlm1(lm,ifl),abs
 cx     1 (dlm1(lm,ifl))
 *
-  100 continue
-  110 continue                        !loop over angular momenta
+  100 continue                        !off-diagonal elements of dlm1 for complex
+                                      !lattice
+  110 continue                        !loop over angular lm momenta
 cx  120 continue
 c
 c----- check that if dlm1 < 1e-10 then two possibilities
@@ -641,7 +642,9 @@ cx      diff=abs((testp-test)/test)
 cx      if (diff.lt.dthr) go to 140
 cx      testp=test
 *
-  120   end do dl1_lattice_sum     !loop over reciprocal lattice vectors
+      end do dl1_lattice_sum     !loop over reciprocal lattice vectors
+  120 continue
+
 c 
 c----- End of the loop over reciprocal lattice vectors 
 c

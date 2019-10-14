@@ -359,7 +359,7 @@ C     INITIALISED AS BELOW. AND USED AS TABLES:
 *
       DO I=2,LL2  
       XPM(I)=XPM(I-1)*XPK         !XPK**(I-1)= e**(i*|m|*phi)
-      AGK(I)=AGK(I-1)*GK          !GK**(I-1)=(K_\perp/\sigma)^(2*|m|)  
+      AGK(I)=AGK(I-1)*GK          !AGK**(I-1)=(K_\perp/\sigma)^(2*|m|)  
                                   !for I=1=lm=(0,0)
       end do
 
@@ -470,7 +470,8 @@ C
       IF(TEST-QP) 27,27,24  
   24  IF(N1-10) 9,25,25  
 *
-!unsuccessful exit-even if not converged continues to DLM2-summation:
+!unsuccessful exit-even if not converged
+!continues further to the DLM2-summation:
 
   25  WRITE(16,26) N1  
   26  FORMAT(29H**DLM1,S NOT CONVERGED BY N1=,I2)  
@@ -497,6 +498,9 @@ C     PREFACTOR  'P2' FOR LM=(00),(11),(20),(22),...
  285  KK=1  
       AP1=TV/(4.0D0*PI)  
       CF=KAPSQ/CI 
+      
+      ! convergence parameter:
+      test1=qt   !default was 1.0D6
 * 
       DO L=1,LL2  
       CP=CF  
@@ -633,7 +637,8 @@ C
       IF(TEST-QP) 45,45,42  
   42  IF(N1-10) 32,43,43  
 *
-!unsuccessful exit-even if not converged continues to DLM3-summation:
+!unsuccessful exit-even if not converged
+!continues further to the DLM3-summation:
 
   43  WRITE(16,44) N1  
   44  FORMAT(31H0**DLM2,S NOT CONVERGED BY N1 =,I2) 
@@ -659,7 +664,7 @@ C
       DLM(1)=DLM(1)+AP*ACC  
 
 !--------/---------/---------/---------/---------/---------/---------/--
-C                          RESCALLING
+C                          RESCALING
 C     FINALLY THE ELEMENTS OF DLM ARE MULTIPLIED BY THE  
 C     FACTOR (-1.0D0)**((M+|M|)/2)  
 C

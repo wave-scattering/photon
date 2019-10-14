@@ -1396,13 +1396,13 @@ C
       EFIRST=EPS1(1)  
       RAP=S(1,1)*KAPPA0/2.D0/PI          !=rsnm/LAMBDA
 *
-!      CALL PCSLAB(YNC,LMAX,IGMAX,RAP,EPS1(1),EPSSPH(1,1),MU1(1)
-!     &     ,MUSPH(1,1),KAPPA,AK,DL(1,1,1),DR(1,1,1),G,ELM,A0,EMACH,
-!     &     QIL,QIIL,QIIIL,QIVL)
+      CALL PCSLAB(YNC,LMAX,IGMAX,RAP,EPS1(1),EPSSPH(1,1),MU1(1)
+     &     ,MUSPH(1,1),KAPPA,AK,DL(1,1,1),DR(1,1,1),G,ELM,A0,EMACH,
+     &     QIL,QIIL,QIIIL,QIVL)
 
-      CALL PCCSLABC(YNC,LMAX,IGMAX,NBAS,A0,EMACH,RAP,EPS1(1)
-     &  ,EPSSPH(1,1),MU1(1),MUSPH(1,1),KAPPA,AK,DL(1,1,1),DR(1,1,1)
-     &     ,G,QIL,QIIL,QIIIL,QIVL)
+!      CALL PCCSLABC(YNC,LMAX,IGMAX,NBAS,A0,EMACH,RAP,EPS1(1)
+!     &  ,EPSSPH(1,1),MU1(1),MUSPH(1,1),KAPPA,AK,DL(1,1,1),DR(1,1,1)
+!     &     ,G,QIL,QIIL,QIIIL,QIVL)
 *
 *--------/---------/---------/---------/---------/---------/---------/--
       IF(NPLAN(1).GE.2) THEN  
@@ -1585,7 +1585,7 @@ c  203 FORMAT(6X,I4,2(8X,F13.8))
   205 FORMAT(2(12X,2F13.8))  
 c  206 FORMAT(10X,F13.8,2(12X,2F13.8))  
   207 FORMAT(3X,'K_PARALLEL=',2F12.6,5X,A2,'POLARIZATION')  
-  208 FORMAT(3X,'ANGLES OF INCIDENCE (IN RAD):  THETA=',F7.2,3X,'FI=',  
+  208 FORMAT(3X,'ANGLES OF INCIDENCE (IN RAD): THETA=',F7.2,3X,'FI=',
      &       F7.2,5X,A2,'POLARIZATION')  
   209 FORMAT(3X,'COMPONENT NR.',I2,3X,'TYPE:',2X,A17)  
   210 FORMAT(3X,'MU :',2F10.5,' | ',2F10.5,' | ',2F10.5/  
@@ -3334,7 +3334,15 @@ C
       PARAMETER (LMEVEN=(LMAX1D*(LMAX1D+1))/2,LMDLMD=LMAX1D*(2*LMAXD+1))  
 C  
 C ..  SCALAR ARGUMENTS  ..  
-C  
+C
+      integer, parameter :: ienf=4  !enforces the shell summation to take
+                                    !into account at least ienf number
+                                    !of shells
+      real*8, parameter :: QT=1.d8     !initial values of test1;
+                                         !default was 1.0D6
+      real*8, parameter :: QP=1.d-6    !required summation precision;
+                                         !default was 1.0D-3
+
       INTEGER, intent(in) ::    LMAX
       REAL*8, intent(in) ::     EMACH
       COMPLEX*16, intent(in) :: KAPPA
@@ -3410,7 +3418,10 @@ C     LATER ROUNDING ERRORS
 C  
       TV=ABS(AR1(1)*AR2(2)-AR1(2)*AR2(1))  !unit cell surface
       ALPHA=TV/(4.0D0*PI)*KAPSQ            
-      AL=ABS(ALPHA)                        !Ewald parameter
+      AL=ABS(ALPHA)          !Ewald parameter used by Kambe and Pendry
+!cxt remove after the test
+        al=1.3005500000000001d0
+!cxt remove after the test
       IF(EXP(AL)*EMACH-5.0D-5)5,5,4  
    4  AL=LOG(5.0D-5/EMACH)  
    5  ALPHA=DCMPLX(AL,0.0D0)  
@@ -3455,22 +3466,32 @@ C
          K=K+1 
   8   CONTINUE 
 C  
-C     THE  RECIPROCAL  LATTICE IS  DEFINED BY  B1,B2 . THE  SUMMATION  
-C     BEGINS WITH THE ORIGIN POINT OF THE LATTICE , AND  CONTINUES IN  
-C     STEPS OF 8*N1 POINTS , EACH  STEP INVOLVING THE  PERIMETER OF A  
+C     THE RECIPROCAL LATTICE IS DEFINED BY B1,B2. THE SUMMATION
+C     BEGINS WITH THE ORIGIN POINT OF THE LATTICE, AND CONTINUES IN
+C     STEPS OF 8*N1 POINTS, EACH STEP INVOLVING THE PERIMETER OF A
 C     PARALLELOGRAM OF LATTICE POINTS ABOUT THE ORIGIN,OF SIDE 2*N1+1  
 C     EACH STEP BEGINS AT LABEL 9.  
-C     AKPT=THE CURRENT LATTICE VECTOR IN THE SUM  
+C     AKPT= THE CURRENT \vK_\parallel IN THE SUM
 C  
       RTV=2.0D0*PI/TV  
       B1(1)=-AR1(2)*RTV  
       B1(2)=AR1(1)*RTV  
       B2(1)=-AR2(2)*RTV  
-      B2(2)=AR2(1)*RTV  
-      TEST1=1.0D6  
-      II=1  
+      B2(2)=AR2(1)*RTV
+
+      ! convergence parameter:
+      TEST1=QT    !default was 1.0D6
+
+! the dual lattice summation includes the vector \vg==0. In this case
+! there is only a single passage of the "do 21" loop controlled by
+! the initial setting of the variable II=1 at the loop end:
+
+      II=1
+
+! Setting counter N1 for the reciprocal lattice summation:
       N1=-1  
-   9  N1=N1+1  
+   9  N1=N1+1
+
       NA=N1+N1+II  
       AN1=DBLE(N1)  
       AN2=-AN1-1.0D0  
@@ -3547,14 +3568,14 @@ C
 C  
 C     THE CONTRIBUTION TO THE SUM DLM1 FOR A PARTICULAR  
 C     RECIPROCAL LATTICE VECTOR IS NOW ACCUMULATED INTO  
-C     THE  ELEMENTS OF DLM,NOTE SPECIAL ACTION IF  AC=0  
+C     THE ELEMENTS OF DLM, NOTE SPECIAL ACTION IF AC=0
 C  
       K=1  
       KK=1  
 *
       DO 19 L=1,LL2  
       MM=1  
-      IF(MOD  (L,2))15,14,15  
+      IF(MOD(L,2)) 15,14,15
   14  MM=2  
   15  N=(L*L+MM)/2  
       NN=(L-MM)/2+2  
@@ -3583,23 +3604,28 @@ C
   22  II=0  
 C  
 C     AFTER EACH STEP OF THE SUMMATION A TEST ON THE  
-C     CONVERGENCE  OF THE  ELEMENTS OF  DLM IS  MADE  
+C     CONVERGENCE OF THE ELEMENTS OF DLM IS MADE
 C  
       TEST2=0.0D0  
 *
       DO 23 I=1,NNDLM  
       DNORM=ABS(DLM(I))  
-      TEST2=TEST2+DNORM*DNORM  
+      TEST2=TEST2+DNORM*DNORM     !=\sum_I |DLM(I))|**2
   23  CONTINUE 
 *
       TEST=ABS((TEST2-TEST1)/TEST1) 
-      TEST1=TEST2  
-      IF(TEST-0.001D0)27,27,24  
-  24  IF(N1-10)9,25,25  
-  25  WRITE(16,26)N1  
+      TEST1=TEST2
+
+! to force summation to go beyond N1=1
+      if (n1<=ienf) go to 9    !where the DLM1 shell summation begins
+
+      IF(TEST-QP) 27,27,24     !QP default was 0.001D0
+  24  IF(N1-10) 9,25,25
+
+  25  WRITE(16,26) N1
   26  FORMAT(29H**DLM1,S NOT CONVERGED BY N1=,I2)  
       GOTO 285  
-  27  WRITE(16,28)N1  
+  27  WRITE(16,28) N1
   28  FORMAT(25H DLM1,S CONVERGED BY N1 =,I2)  
 C     WRITE(16,250)DLM  
 C250  FORMAT(5H0DLM1,//,45(2E13.5,/))  
